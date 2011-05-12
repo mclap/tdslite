@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
@@ -8,6 +9,7 @@
 #include <unistd.h>
 
 #include "net.h"
+#include "debug.h"
 
 struct net_s
 {
@@ -41,13 +43,18 @@ int net_free(net_t cn)
 
 int net_send(net_t cn, const void *buf, size_t len)
 {
-	if (write(cn->fd, buf, len) == len)
-		return len;
+	TP_DEBUG_DUMP(buf, len, "sending data");
+	int rc = write(cn->fd, buf, len);
+	if (rc == len)
+		return 0;
 
 	return -1;
 }
 
 int net_read(net_t cn, void *buf, size_t len)
 {
-	return read(cn->fd, buf, len);
+	int rc = read(cn->fd, buf, len);
+	TP_DEBUG_DUMP(buf, rc, "received data (len %d, want %d), errno=%d", (int)rc, (int)len, errno);
+
+	return rc;
 }
