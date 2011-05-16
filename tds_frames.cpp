@@ -1,3 +1,5 @@
+#include <arpa/inet.h>
+
 #include "tds_frames.h"
 
 #include "debug.h"
@@ -5,6 +7,27 @@
 namespace tds
 {
 
+void tds_encrypt(void *ptr, size_t len)
+{
+	unsigned char *p = (unsigned char *)ptr;
+	while (len > 0)
+	{
+		unsigned char b = *p;
+		*p++ = ( ((b & 0xF0) >> 4) | ((b & 0x0F) << 4) ) ^ 0xA5;
+		len--;
+	}
+}
+
+void tds_decrypt(void *ptr, size_t len)
+{
+	unsigned char *p = (unsigned char *)ptr;
+	while (len > 0)
+	{
+		unsigned char b = *p & 0xA5;
+		*p++ = ( ((b & 0xF0) >> 4) | ((b & 0x0F) << 4) );
+		len--;
+	}
+}
 iconv_convert::iconv_convert(const char *_from, const char *_to)
 	: from(_from), to(_to), h(0)
 {
@@ -22,7 +45,7 @@ iconv_convert::~iconv_convert()
 void iconv_convert::convert(const void *ptr, const size_t len, std::vector<char>& buf)
 {
 	if (!h)
-		h = iconv_open(from, to);
+		h = iconv_open(to, from);
 
 	buf.resize(len*16);
 
@@ -35,11 +58,12 @@ void iconv_convert::convert(const void *ptr, const size_t len, std::vector<char>
 	TP_DEBUG("nconv=%d, errno=%d, outleft=%d, len=%d", nconv, errno, (int)outleft, (int)len);
 
 	buf.resize(buf.size() - outleft);
+	TP_DEBUG_DUMP(&buf[0], buf.size(), "converted data:");
 }
 
 buffer::buffer()
-	: to_utf16("UTF-8", "UTF-16")
-	, to_utf8("UTF-16", "UTF-8")
+	: to_utf16("UTF-8", "UCS-2LE")
+	, to_utf8("UCS-2LE", "UTF-8")
 {
 }
 
@@ -54,10 +78,15 @@ bool buffer::copy_to(size_t off, size_t len, void *dst)
 	return true;
 }
 
-bool buffer::copy_to_utf8(size_t off, size_t len, std::string& dst)
+bool buffer::copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f)
 {
-	std::vector<char> buf;
-	to_utf8.convert(&data[off], len, buf);
+	std::vector<char> tmp, buf;
+	tmp.assign(data.begin()+off, data.begin()+off+len*2);
+
+	if (f)
+		f(&tmp[0], len*2);
+
+	to_utf8.convert(&tmp[0], len * 2, buf);
 
 	dst.assign(&buf[0], buf.size());
 
@@ -87,10 +116,13 @@ void buffer::put(const std::string& value, bool include_nul)
 	put(&value[0], value.size() + (include_nul ? 1 : 0));
 }
 
-void buffer::put_utf16(const std::string& value)
+void buffer::put_utf16(const std::string& value, buffer::byte_filter f)
 {
 	std::vector<char> buf;
 	to_utf16.convert(value.c_str(), value.size(), buf);
+	if (f)
+		f(&buf[0], buf.size());
+
 	put(&buf[0], buf.size());
 }
 
@@ -173,24 +205,14 @@ frame_login7::frame_login7()
 {
 	memset(&fixed, 0, sizeof(fixed));
 
-	fixed.tds_version = 0x70;
+	fixed.tds_version = htonl(TDS_VERSION_2008_B);
 	fixed.packet_size = 65536;
 	fixed.client_pid = 1; // FIXME
 	fixed.flags2.f_odbc = 1;
 	fixed.flags2.f_language = 1;
-
-#if 0
-	client_host = "localhost";
-	user_name = "DfsAdmin";
-	user_pass = "Idqsras";
-	app_name = "tdslite";
-	server_name = "kf3";
-	database = "plesov_test1";
-#endif
-
 }
 
-bool frame_login7::encode_ref(const std::string& data, ref_type& ref, buffer& ref_data)
+bool frame_login7::encode_ref(const std::string& data, ref_type& ref, buffer& ref_data, buffer::byte_filter f)
 {
 	ref.off = sizeof(fixed) + ref_data.size();
 	ref.len = 0;
@@ -200,29 +222,31 @@ bool frame_login7::encode_ref(const std::string& data, ref_type& ref, buffer& re
 
 	ref.len = data.size();
 
-	ref_data.put_utf16(data);
+	ref_data.put_utf16(data, f);
 	return true;
 }
 
 bool frame_login7::encode(buffer& output)
 {
 	buffer ref_data;
-#define EREF(v) do { \
+#define EREF(v,f) do { \
 	TP_DEBUG("encode %s (%d): %s", #v, (int)v.size(), v.c_str()); \
-	encode_ref(v, fixed.v, ref_data); \
+	encode_ref(v, fixed.v, ref_data, f); \
 } while(0)
-	EREF(client_host);
-	EREF(user_name);
-	EREF(user_pass);
-	EREF(app_name);
-	EREF(server_name);
-	EREF(interface_name);
-	EREF(language);
-	EREF(database);
-	EREF(sspi);
-	EREF(db_file);
-	EREF(change_password);
+	EREF(client_host,0);
+	EREF(user_name,0);
+	EREF(user_pass,tds_encrypt);
+	EREF(app_name,0);
+	EREF(server_name,0);
+	EREF(interface_name,0);
+	EREF(language,0);
+	EREF(database,0);
+	EREF(sspi,0);
+	EREF(db_file,0);
+	EREF(change_password,0);
 #undef EREF
+
+	/* TODO: Fix password */
 
 	fixed.length = sizeof(fixed) + ref_data.size();
 
@@ -232,10 +256,10 @@ bool frame_login7::encode(buffer& output)
 	return true;
 	}
 
-bool frame_login7::decode_ref(buffer& input, ref_type& ref, std::string& value)
+bool frame_login7::decode_ref(buffer& input, ref_type& ref, std::string& value, buffer::byte_filter f)
 {
 	if (ref.len > 0)
-		input.copy_to_utf8(ref.off, ref.len, value);
+		input.copy_to_utf8(ref.off, ref.len, value, f);
 	return true;
 }
 
@@ -246,23 +270,23 @@ bool frame_login7::decode(buffer& input)
 	TP_DEBUG("byte order: %d", fixed.flags1.f_byte_order);
 	TP_DEBUG("length: %d", fixed.length);
 
-#define DREF(v) do {\
+#define DREF(v,f) do {\
 	TP_DEBUG("fetch %s (off=%04x, len=%04x)", #v, fixed.v.off, fixed.v.len); \
-	decode_ref(input, fixed.v, v); \
+	decode_ref(input, fixed.v, v, f); \
 	TP_DEBUG("%s: %s", #v, v.c_str()); \
 } while(0)
-	DREF(client_host);
-	DREF(user_name);
-	DREF(user_pass);
-	DREF(app_name);
-	DREF(server_name);
-	DREF(interface_name);
-	DREF(language);
-	DREF(database);
+	DREF(client_host,0);
+	DREF(user_name,0);
+	DREF(user_pass,tds_decrypt);
+	DREF(app_name,0);
+	DREF(server_name,0);
+	DREF(interface_name,0);
+	DREF(language,0);
+	DREF(database,0);
 	//input.copy_to(ref.off, ref.len, &fixed.client_id);
-	DREF(sspi);
-	DREF(db_file);
-	DREF(change_password);
+	DREF(sspi,0);
+	DREF(db_file,0);
+	DREF(change_password,0);
 #undef DREF
 
 	return true;

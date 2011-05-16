@@ -5,6 +5,13 @@
 #include <iconv.h>
 #include "net.h"
 
+#define TDS_VERSION_2005	0x02000972
+#define TDS_VERSION_2008_A	0x03000A73
+#define TDS_VERSION_2008_B	0x03000B73
+#define TDS_VERSION_GEN_7_3	0x00000073
+#define TDS_VERSION_GEN_7_2	0x00000072
+#define TDS_VERSION_GEN_7_0	0x00000070
+
 namespace tds
 {
 
@@ -28,6 +35,8 @@ public:
 	iconv_convert to_utf16;
 	iconv_convert to_utf8;
 
+	typedef void (*byte_filter)(void *ptr, size_t len);
+
 	buffer();
 	~buffer();
 
@@ -43,7 +52,7 @@ public:
 
 	bool copy_to(size_t off, size_t len, void *dst);
 
-	bool copy_to_utf8(size_t off, size_t len, std::string& dst);
+	bool copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f = 0);
 
 	size_t size();
 
@@ -60,7 +69,7 @@ public:
 
 	void put(const void *ptr, size_t size);
 	void put(const std::string& value, bool include_nul = false);
-	void put_utf16(const std::string& value);
+	void put_utf16(const std::string& value, buffer::byte_filter f = 0);
 	void put(const buffer& value);
 	bool push(net_t cn);
 	bool pull(net_t cn, size_t size);
@@ -249,9 +258,9 @@ struct frame_login7
 
 	frame_login7();
 
-	bool encode_ref(const std::string& data, ref_type& ref, buffer& ref_data);
+	bool encode_ref(const std::string& data, ref_type& ref, buffer& ref_data, buffer::byte_filter f = 0);
 	bool encode(buffer& output);
-	bool decode_ref(buffer& input, ref_type& ref, std::string& value);
+	bool decode_ref(buffer& input, ref_type& ref, std::string& value, buffer::byte_filter f = 0);
 	bool decode(buffer& input);
 };
 

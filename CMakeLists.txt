@@ -24,3 +24,17 @@ add_executable(cli
 	main.cpp
 	)
 target_link_libraries(cli tdslite ${ICONV_LIB})
+
+set(check_PROGRAMS
+	check-frame_login7
+	)
+
+function(register_tests srcprefix names)
+	foreach(cp ${names})
+		add_executable(${cp} ${srcprefix}${cp}.cpp)
+		target_link_libraries(${cp} tdslite ${ICONV_LIB})
+		add_test(${cp} ${cp})
+	endforeach(cp)
+endfunction(register_tests)
+
+register_tests(./ "${check_PROGRAMS}")
