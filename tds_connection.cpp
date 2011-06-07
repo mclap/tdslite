@@ -50,6 +50,12 @@ unsigned char connection::gen_packet_id()
 	return ++last_packet_id;
 }
 
+bool connection::pull_response(frame_header& header, buffer& body)
+{
+	header.pull(cn);
+	body.pull(cn, ntohs(header.ns_length) - sizeof(header));
+}
+
 bool connection::call_prelogin()
 {
 	frame_header header;
@@ -67,8 +73,7 @@ bool connection::call_prelogin()
 	buf.push(cn);
 
 	/* response */
-	header.pull(cn);
-	buf.pull(cn, ntohs(header.ns_length));
+	pull_response(header, buf);
 }
 
 bool connection::call_login7()
@@ -103,8 +108,7 @@ bool connection::call_login7()
 	buf.push(cn);
 
 	/* response */
-	header.pull(cn);
-	buf.pull(cn, ntohs(header.ns_length));
+	pull_response(header, buf);
 }
 
 } /* namespace tds */

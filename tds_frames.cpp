@@ -145,7 +145,7 @@ bool buffer::pull(net_t cn, size_t size)
 {
 	data.resize(size);
 	int rc = net_read(cn, &data[0], size);
-	if (0 == rc)
+	if (size == rc)
 		return true;
 
 	perror("net_read");
@@ -175,7 +175,7 @@ bool frame_header::push(net_t cn)
 bool frame_header::pull(net_t cn)
 {
 	int rc = net_read(cn, this, sizeof(*this));
-	if (0 == rc)
+	if (sizeof(*this) == rc)
 		return true;
 
 	perror("net_read");

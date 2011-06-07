@@ -1,6 +1,7 @@
 #pragma once
 
 #include "net.h"
+#include "tds_frames.h"
 
 namespace tds
 {
@@ -22,6 +23,8 @@ private:
 	unsigned char last_packet_id;
 
 	unsigned char gen_packet_id();
+
+	bool pull_response(frame_header& header, buffer& body);
 };
 
 } /* namespace tds */
