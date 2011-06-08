@@ -27,6 +27,7 @@ target_link_libraries(cli tdslite ${ICONV_LIB})
 
 set(check_PROGRAMS
 	check-frame_login7
+	check-frame_error
 	)
 
 function(register_tests srcprefix names)

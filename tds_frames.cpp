@@ -103,6 +103,11 @@ void buffer::clear()
 	data.clear();
 }
 
+void buffer::drain(size_t size)
+{
+	data.erase(data.begin(), data.begin()+size);
+}
+
 void buffer::put(const void *ptr, size_t size)
 {
 	const unsigned char *begin = reinterpret_cast<const unsigned char *>(ptr),
@@ -150,6 +155,56 @@ bool buffer::pull(net_t cn, size_t size)
 
 	perror("net_read");
 	return false;
+}
+
+bool buffer::fetch_b_varchar(std::string& out)
+{
+	uint8_t len;
+	fetch(len);
+	copy_to_utf8(0, len, out);
+	drain(len*2);
+	return true;
+}
+
+bool buffer::fetch_us_varchar(std::string& out)
+{
+	uint16_t len;
+	fetch(len);
+	copy_to_utf8(0, len, out);
+	drain(len*2);
+	return true;
+}
+
+void buffer::put_b_varchar(const std::string& value)
+{
+	std::vector<char> buf;
+	to_utf16.convert(value.c_str(), value.size(), buf);
+	size_t len = buf.size() >> 1;
+
+	if (len > 255)
+	{
+		put((uint8_t)0);
+		return;
+	}
+
+	put((uint8_t)len);
+	put(&buf[0], buf.size());
+}
+
+void buffer::put_us_varchar(const std::string& value)
+{
+	std::vector<char> buf;
+	to_utf16.convert(value.c_str(), value.size(), buf);
+	size_t len = buf.size() >> 1;
+
+	if (len > 65535)
+	{
+		put((uint16_t)0);
+		return;
+	}
+
+	put((uint16_t)len);
+	put(&buf[0], buf.size());
 }
 
 frame_header::frame_header()
@@ -290,6 +345,23 @@ bool frame_login7::decode(buffer& input)
 #undef DREF
 
 	return true;
-	}
+}
+
+bool frame_error::encode(buffer& output)
+{
+	return false;
+}
+
+bool frame_error::decode(buffer& input)
+{
+	input.copy_to(0, sizeof(fixed), &fixed);
+	input.drain(sizeof(fixed));
+	input.fetch_us_varchar(error_text);
+	input.fetch_b_varchar(server_name);
+	input.fetch_b_varchar(proc_name);
+	input.fetch(line);
+
+	return true;
+}
 
 } // namespace tds

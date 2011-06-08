@@ -85,7 +85,7 @@ bool connection::call_login7()
 
 	request.client_host = "localhost";
 	request.user_name = "sa";
-	request.user_pass = "Baetoot0";
+	request.user_pass = "Baetoot01";
 	request.app_name = "tdslite";
 	request.server_name = "kf3";
 	request.database = "plesov_test1";

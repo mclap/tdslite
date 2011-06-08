@@ -46,7 +46,7 @@ public:
 		size_t len = sizeof(value);
 
 		copy_to(0, len, &value);
-		data.erase(data.begin(), data.begin()+len);
+		drain(len);
 		return true;
 	}
 
@@ -57,6 +57,7 @@ public:
 	size_t size();
 
 	void clear();
+	void drain(size_t size);
 
 	template<typename T>
 	void put(const T& value)
@@ -73,6 +74,11 @@ public:
 	void put(const buffer& value);
 	bool push(net_t cn);
 	bool pull(net_t cn, size_t size);
+
+	bool fetch_b_varchar(std::string& out);
+	bool fetch_us_varchar(std::string& out);
+	void put_b_varchar(const std::string& value);
+	void put_us_varchar(const std::string& value);
 
 private:
 	typedef std::vector<unsigned char> buffer_type;
@@ -262,6 +268,42 @@ struct frame_login7
 	bool encode(buffer& output);
 	bool decode_ref(buffer& input, ref_type& ref, std::string& value, buffer::byte_filter f = 0);
 	bool decode(buffer& input);
+};
+
+#pragma pack(push, 1)
+struct frame_loginack
+{
+	uint8_t type;
+	uint16_t length;
+	uint8_t interface;
+	uint32_t tds_version;
+
+};
+#pragma pack(pop)
+
+struct frame_error
+{
+#pragma pack(push, 1)
+	struct
+	{
+		uint8_t type;
+		uint16_t length;
+		uint32_t error_number;
+		uint8_t error_state;
+		uint8_t error_class;
+	} fixed;
+#pragma pack(pop)
+
+	std::string error_text;
+	std::string server_name;
+	std::string proc_name;
+	uint32_t line;
+
+	bool encode(buffer& output);
+	bool decode(buffer& input);
+		//error_text; US_VAR: 
+		//server_name; B_VAR
+		//proc_name ; BVAR
 };
 
 } // namespace tds
