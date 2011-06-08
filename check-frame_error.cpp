@@ -41,6 +41,7 @@ int main()
 
 	TP_DEBUG_DUMP(sample, sizeof(sample), "source, len=%d", (int)(sizeof(sample)));
 	TP_DEBUG_DUMP(encoded, tmp.size(), "encoded, len=%d", (int)(tmp.size()));
+	assert(sizeof(sample) == tmp.size());
 	assert(0 == memcmp(sample, encoded, tmp.size()));
 
 	return 0;
