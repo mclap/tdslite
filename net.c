@@ -4,6 +4,7 @@
 #include <sys/uio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -18,13 +19,20 @@ struct net_s
 
 net_t net_create(const char *addr, int port)
 {
+        unsigned int ianIP;
 	struct sockaddr_in sa;
-
 	struct net_s *cn = (net_t)calloc(1, sizeof(*cn));
+        struct hostent *hp = gethostbyname(addr);
+
+        if (hp)
+                memcpy(&ianIP, hp->h_addr, hp->h_length);
+        else
+                ianIP = inet_addr(addr);
+
 	cn->fd = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&sa, 0, sizeof(sa));
-	sa.sin_addr.s_addr = inet_addr(addr);
+	sa.sin_addr.s_addr = ianIP;
 	sa.sin_port = htons(port);
 	sa.sin_family = AF_INET;
 	if (0 == connect(cn->fd, (struct sockaddr *)&sa, sizeof(sa)))

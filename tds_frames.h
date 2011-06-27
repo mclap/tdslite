@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <deque>
 
 #include <iconv.h>
 #include "net.h"
@@ -53,6 +54,8 @@ public:
 	bool copy_to(size_t off, size_t len, void *dst);
 
 	bool copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f = 0);
+
+	bool empty();
 
 	size_t size();
 
@@ -281,7 +284,13 @@ struct frame_loginack
 };
 #pragma pack(pop)
 
-struct frame_error
+enum frame_token_e
+{
+	ft_error = 0xaa,
+	ft_done = 0xfd
+};
+
+struct frame_token_error
 {
 #pragma pack(push, 1)
 	struct
@@ -304,6 +313,13 @@ struct frame_error
 		//error_text; US_VAR: 
 		//server_name; B_VAR
 		//proc_name ; BVAR
+};
+
+struct frame_response
+{
+	std::deque<frame_token_error> errors;
+
+	bool decode(buffer& input);
 };
 
 } // namespace tds

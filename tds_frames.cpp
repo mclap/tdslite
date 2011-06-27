@@ -93,6 +93,11 @@ bool buffer::copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter 
 	return true;
 }
 
+bool buffer::empty()
+{
+	return data.empty();
+}
+
 size_t buffer::size()
 {
 	return data.size();
@@ -347,12 +352,19 @@ bool frame_login7::decode(buffer& input)
 	return true;
 }
 
-bool frame_error::encode(buffer& output)
+bool frame_token_error::encode(buffer& output)
 {
-	return false;
+	output.put(&fixed, sizeof(fixed));
+
+	output.put_us_varchar(error_text);
+	output.put_b_varchar(server_name);
+	output.put_b_varchar(proc_name);
+	output.put(line);
+
+	return true;
 }
 
-bool frame_error::decode(buffer& input)
+bool frame_token_error::decode(buffer& input)
 {
 	input.copy_to(0, sizeof(fixed), &fixed);
 	input.drain(sizeof(fixed));
@@ -360,6 +372,34 @@ bool frame_error::decode(buffer& input)
 	input.fetch_b_varchar(server_name);
 	input.fetch_b_varchar(proc_name);
 	input.fetch(line);
+
+	TP_DEBUG("bytes left: %d", (int)input.size());
+	return true;
+}
+
+bool frame_response::decode(buffer& input)
+{
+	while (!input.empty())
+	{
+		unsigned char token_id = 0x00;
+		input.copy_to(0, 1, &token_id);
+		frame_token_error e;
+
+		switch(token_id)
+		{
+		case ft_error:
+			if (!e.decode(input))
+				return false;
+			errors.push_back(e);
+			break;
+		case ft_done:
+			input.drain(input.size());
+			break;
+		default:
+			TP_DEBUG("error: unknown token: 0x%02x", (int)token_id);
+			return false;
+		};
+	}
 
 	return true;
 }
