@@ -37,6 +37,12 @@ int main()
 
 	tmp.fetch(header);
 	assert(true == body.decode(tmp));
+	assert(1 == body.errors.size());
+	assert("SQLTEST" == body.errors[0].server_name);
+	assert("" == body.errors[0].proc_name);
+	assert(1 == body.errors[0].line);
+	assert("Login failed for user 'sa'." == body.errors[0].error_text);
+
 
 	return 0;
 }
