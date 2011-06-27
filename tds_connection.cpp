@@ -76,7 +76,7 @@ bool connection::call_prelogin()
 	pull_response(header, buf);
 }
 
-bool connection::call_login7()
+bool connection::call_login7(const std::string& dbhost, const std::string& dbuser, const std::string& dbpass, const std::string& dbname)
 {
 	frame_header header;
 	frame_login7 request;
@@ -84,11 +84,11 @@ bool connection::call_login7()
 	/* request */
 
 	request.client_host = "localhost";
-	request.user_name = "sa";
-	request.user_pass = "Baetoot01";
+	request.user_name = dbuser;
+	request.user_pass = dbpass;
 	request.app_name = "tdslite";
-	request.server_name = "kf3";
-	request.database = "plesov_test1";
+	request.server_name = dbhost;
+	request.database = dbname;
 
 	buffer tmp;
 	request.encode(tmp);

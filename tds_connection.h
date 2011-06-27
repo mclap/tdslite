@@ -16,7 +16,7 @@ public:
 	void disconnect();
 
 	bool call_prelogin();
-	bool call_login7();
+	bool call_login7(const std::string& dbhost, const std::string& dbuser, const std::string& dbpass, const std::string& dbname);
 
 private:
 	net_t cn;

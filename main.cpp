@@ -5,9 +5,9 @@
 
 int main(int argc, char *argv[])
 {
-	if (argc < 6)
+	if (argc < 7)
 	{
-		printf("usage: %s host port user pass query\n", argv[0]);
+		printf("usage: %s host port user pass database query\n", argv[0]);
 		return 1;
 	}
 
@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	*/
 	tds::connection cn;
 	cn.connect(argv[1], strtol(argv[2], 0, 10));
-	cn.call_login7();
+	cn.call_login7(argv[1], argv[3], argv[4], argv[5]);
 
 	return 0;
 }
