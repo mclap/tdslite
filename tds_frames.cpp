@@ -377,26 +377,81 @@ bool frame_token_error::decode(buffer& input)
 	return true;
 }
 
+bool frame_token_loginack::decode(buffer& input)
+{
+	input.copy_to(0, sizeof(fixed1), &fixed1);
+	input.drain(sizeof(fixed1));
+	input.fetch_b_varchar(prog_name);
+	input.copy_to(0, sizeof(fixed2), &fixed2);
+	input.drain(sizeof(fixed2));
+
+	TP_DEBUG("bytes left: %d", (int)input.size());
+	TP_DEBUG("prog_name: %s (%d.%d %d.%d)", prog_name.c_str(),
+			fixed2.ver_major,
+			fixed2.ver_minor,
+			fixed2.build_num_hi,
+			fixed2.build_num_lo);
+	TP_DEBUG("interface: %d, version %08x",
+			fixed1.interface,
+			fixed1.tds_version);
+	return true;
+}
+
+bool frame_token_envchange::decode(const frame_token_header& hdr, buffer& input)
+{
+	input.fetch(type);
+	switch(type)
+	{
+	case 4: // packet size
+		input.fetch_b_varchar(s_old);
+		input.fetch_b_varchar(s_new);
+		TP_DEBUG("envchange (pkt size): %s (old: %s)", s_new.c_str(), s_old.c_str());
+		break;
+	default:
+		TP_DEBUG("envchange type: %d (ignore)", type);
+		input.drain(hdr.length-1);
+	}
+
+	return true;
+}
+
 bool frame_response::decode(buffer& input)
 {
 	while (!input.empty())
 	{
-		unsigned char token_id = 0x00;
-		input.copy_to(0, 1, &token_id);
-		frame_token_error e;
+		frame_token_header hdr;
+		if (!input.fetch(hdr))
+			return false;
 
-		switch(token_id)
+		switch(hdr.type)
 		{
 		case ft_error:
+		{
+			frame_token_error e;
 			if (!e.decode(input))
 				return false;
 			errors.push_back(e);
 			break;
+		}
+		case ft_loginack:
+		{
+			frame_token_loginack ack;
+			if (!ack.decode(input))
+				return false;
+			break;
+		}
+		case ft_envchange:
+		{
+			frame_token_envchange elm;
+			if (!elm.decode(hdr,input))
+				return false;
+			break;
+		}
 		case ft_done:
 			input.drain(input.size());
 			break;
 		default:
-			TP_DEBUG("error: unknown token: 0x%02x", (int)token_id);
+			TP_DEBUG("error: unknown token: 0x%02x", hdr.type);
 			return false;
 		};
 	}

@@ -273,30 +273,28 @@ struct frame_login7
 	bool decode(buffer& input);
 };
 
-#pragma pack(push, 1)
-struct frame_loginack
-{
-	uint8_t type;
-	uint16_t length;
-	uint8_t interface;
-	uint32_t tds_version;
-
-};
-#pragma pack(pop)
 
 enum frame_token_e
 {
 	ft_error = 0xaa,
+	ft_loginack = 0xad,
+	ft_envchange = 0xe3,
 	ft_done = 0xfd
 };
+
+#pragma pack(push, 1)
+struct frame_token_header
+{
+	uint8_t type;
+	uint16_t length;
+};
+#pragma pack(pop)
 
 struct frame_token_error
 {
 #pragma pack(push, 1)
 	struct
 	{
-		uint8_t type;
-		uint16_t length;
 		uint32_t error_number;
 		uint8_t error_state;
 		uint8_t error_class;
@@ -313,6 +311,39 @@ struct frame_token_error
 		//error_text; US_VAR: 
 		//server_name; B_VAR
 		//proc_name ; BVAR
+};
+
+struct frame_token_loginack
+{
+#pragma pack(push, 1)
+	struct
+	{
+		uint8_t interface;
+		uint32_t tds_version;
+	} fixed1;
+#pragma pack(pop)
+
+	std::string prog_name;
+
+#pragma pack(push, 1)
+	struct
+	{
+		uint8_t ver_major;
+		uint8_t ver_minor;
+		uint8_t build_num_hi;
+		uint8_t build_num_lo;
+	} fixed2;
+#pragma pack(pop)
+
+	bool decode(buffer& input);
+};
+
+struct frame_token_envchange
+{
+	uint8_t type;
+	std::string s_old, s_new;
+
+	bool decode(const frame_token_header& hdr, buffer& input);
 };
 
 struct frame_response

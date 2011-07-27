@@ -50,10 +50,24 @@ unsigned char connection::gen_packet_id()
 	return ++last_packet_id;
 }
 
-bool connection::pull_response(frame_header& header, buffer& body)
+bool connection::pull_response(frame_header& header, frame_response& resp)
 {
-	header.pull(cn);
-	body.pull(cn, ntohs(header.ns_length) - sizeof(header));
+	do
+	{
+		if (!header.pull(cn))
+			return false;
+
+		if (header.type != frame_header::table_response)
+			return false;
+
+		buffer body;
+		if (!body.pull(cn, ntohs(header.ns_length) - sizeof(header)))
+			return false;
+
+		if (!resp.decode(body))
+			return false;
+
+	} while((header.status & frame_header::eom) != frame_header::eom);
 }
 
 bool connection::call_prelogin()
@@ -73,7 +87,8 @@ bool connection::call_prelogin()
 	buf.push(cn);
 
 	/* response */
-	pull_response(header, buf);
+	frame_response resp;
+	pull_response(header, resp);
 }
 
 bool connection::call_login7(const std::string& dbhost, const std::string& dbuser, const std::string& dbpass, const std::string& dbname)
@@ -108,7 +123,8 @@ bool connection::call_login7(const std::string& dbhost, const std::string& dbuse
 	buf.push(cn);
 
 	/* response */
-	pull_response(header, buf);
+	frame_response resp;
+	pull_response(header, resp);
 }
 
 } /* namespace tds */

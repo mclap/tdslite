@@ -24,7 +24,7 @@ private:
 
 	unsigned char gen_packet_id();
 
-	bool pull_response(frame_header& header, buffer& body);
+	bool pull_response(frame_header& header, frame_response& resp);
 };
 
 } /* namespace tds */
