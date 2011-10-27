@@ -436,10 +436,10 @@ enum frame_token_e
 
 enum frame_token_class_e
 {
-	tce_zero_len = 0x01,
-	tce_fixed_len = 0x11,
-	tce_var_len = 0x10,
 	tce_var_count = 0x00,
+	tce_zero_len = 0x01,
+	tce_var_len = 0x02,
+	tce_fixed_len = 0x03,
 };
 
 inline int frame_token_get_class(unsigned char type)

@@ -672,6 +672,8 @@ bool frame_response::decode(buffer& input)
 		case tce_var_count:
 			// COLMETADATA & ALTMETADATA
 			TP_DEBUG("token is variable count"); break;
+		default:
+			TP_DEBUG("unknown token class %d", token_class);
 		}
 
 		switch(hdr.type)
