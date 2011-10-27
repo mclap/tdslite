@@ -580,11 +580,14 @@ bool frame_token_colmetadata::decode(buffer& input)
 
 bool column_data::decode(const column_info& info, buffer& input)
 {
+	TP_DEBUG("info.type=0x%02x, info.length=%d", info.type, info.length);
+
 	switch(info.type)
 	{
-	case dt_intn: switch(info.length)
-	{
+	case dt_intn:
 		TP_DEBUG("fetch INTN(%d)", (int)info.length);
+		switch(info.length)
+		{
 		case 1:
 		{
 			int8_t v;
@@ -607,6 +610,7 @@ bool column_data::decode(const column_info& info, buffer& input)
 			if (!input.fetch(v))
 				return false;
 			data.v_bigint = v;
+			TP_DEBUG("v_bigint=%d", v);
 			return true;
 		}
 		case 8:
@@ -617,7 +621,7 @@ bool column_data::decode(const column_info& info, buffer& input)
 			data.v_bigint = v;
 			return true;
 		}
-	}
+		}
 	default:
 		return false;
 	}
