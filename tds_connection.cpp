@@ -68,6 +68,36 @@ bool connection::pull_response(frame_header& header, frame_response& resp)
 			return false;
 
 	} while((header.status & frame_header::eom) != frame_header::eom);
+
+	return true;
+}
+
+bool connection::pull_prelogin_response(frame_header& header, frame_prelogin& resp)
+{
+	do
+	{
+		if (!header.pull(cn))
+			return false;
+
+		/* from MS-TDS:
+		 * A message sent by the client to set up context for login.
+		 * The server responds to a client PRELOGIN message with a
+		 * message of packet header type 0x04 and the packet data
+		 * containing a PRELOGIN structure.
+		 */
+		if (header.type != frame_header::table_response) // sic!
+			return false;
+
+		buffer body;
+		if (!body.pull(cn, ntohs(header.ns_length) - sizeof(header)))
+			return false;
+
+		if (!resp.decode(body))
+			return false;
+
+	} while((header.status & frame_header::eom) != frame_header::eom);
+
+	return true;
 }
 
 bool connection::call_prelogin()
@@ -83,12 +113,18 @@ bool connection::call_prelogin()
 	header.packet_id = gen_packet_id();
 	header.ns_length = htons(buf.size() + sizeof(header));
 
-	header.push(cn);
-	buf.push(cn);
+	if (!header.push(cn))
+		return false;
+
+	if (!buf.push(cn))
+		return false;
 
 	/* response */
-	frame_response resp;
-	pull_response(header, resp);
+	frame_prelogin resp;
+	if (!pull_prelogin_response(header, resp))
+		return false;
+
+	return true;
 }
 
 bool connection::call_login7(const std::string& dbhost, const std::string& dbuser, const std::string& dbpass, const std::string& dbname)
@@ -120,11 +156,57 @@ bool connection::call_login7(const std::string& dbhost, const std::string& dbuse
 	buf.put(tmp);
 	TP_DEBUG("buf.size=%d", (int)buf.size());
 
-	buf.push(cn);
+	if (!buf.push(cn))
+		return false;
 
 	/* response */
 	frame_response resp;
-	pull_response(header, resp);
+	if (!pull_response(header, resp))
+		return false;
+
+	return resp.auth_success;
+}
+
+bool connection::call_sql_batch(const std::string& query)
+{
+	frame_header header;
+	frame_sql_batch request;
+
+	/* request */
+	request.query = query;
+	request.auto_commit = true;
+
+	buffer tmp;
+	request.encode(tmp);
+	TP_DEBUG("tmp.size=%d", (int)tmp.size());
+
+	header.type = frame_header::sql_batch;
+	header.packet_id = gen_packet_id();
+	header.ns_length = htons(tmp.size() + sizeof(header));
+
+	buffer buf;
+	buf.put(header);
+	TP_DEBUG("buf.size=%d", (int)buf.size());
+
+	buf.put(tmp);
+	TP_DEBUG("buf.size=%d", (int)buf.size());
+
+	if (!buf.push(cn))
+		return false;
+
+	/* response */
+	frame_response resp;
+	if (!pull_response(header, resp))
+		return false;
+
+	TP_DEBUG("errors: %d", resp.errors.size());
+
+	std::deque<frame_token_error>::iterator iter = resp.errors.begin();
+	for ( ; iter != resp.errors.end(); ++iter)
+	{
+		TP_DEBUG("error: %s", iter->error_text.c_str());
+	}
+	return true;
 }
 
 } /* namespace tds */

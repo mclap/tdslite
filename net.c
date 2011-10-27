@@ -55,6 +55,8 @@ int net_send(net_t cn, const void *buf, size_t len)
 	int rc = write(cn->fd, buf, len);
 	if (rc == len)
 		return 0;
+	TP_DEBUG("write failed: rc=%d, want=%d, errno=%d",
+		rc, (int)len, errno);
 
 	return -1;
 }

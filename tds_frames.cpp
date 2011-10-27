@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <inttypes.h>
 
 #include "tds_frames.h"
 
@@ -110,6 +111,7 @@ void buffer::clear()
 
 void buffer::drain(size_t size)
 {
+	TP_DEBUG("drain %d bytes of %d", (int)size, (int)data.size());
 	data.erase(data.begin(), data.begin()+size);
 }
 
@@ -242,23 +244,110 @@ bool frame_header::pull(net_t cn)
 	return false;
 }
 
-bool frame_prelogin::encode(buffer& output)
+void frame_prelogin::option::encode(buffer& output, const unsigned short base_offset)
 {
-	output.put(version);
-	output.put(sub_build);
-	output.put(encryption);
-	output.put(instance_name);
-	output.put(thread_id);
-	output.put((unsigned char)0x00); /* B_MARS */
-	/* options */
-	output.put((unsigned char)0xFF);
+	output.put(token);
+	output.put(htons(offset + base_offset));
+	output.put(htons(length));
+}
 
+bool frame_prelogin::encode_option(buffer& output, const option::token_type token, const void *data, const short size)
+{
+	options.push_back(option(token, output.size(), size));
+	output.put(data, size);
 	return true;
 }
 
-bool frame_prelogin::decode(const buffer& input)
+bool frame_prelogin::encode(buffer& output)
 {
-	return false;
+#if 0
+        static const unsigned char prelogin[] = {
+                0x00, 0x00, 0x15, 0x00, 0x06, 0x01, 0x00, 0x1b,
+                0x00, 0x01, 0x02, 0x00, 0x1c, 0x00, 0x01, 0x03,
+                0x00, 0x1d, 0x00, 0x00, 0xff, 0x08, 0x00, 0x01,
+                0x55, 0x00, 0x00, 0x02, 0x00
+        };
+
+        output.put(prelogin, sizeof(prelogin));
+	return true;
+
+#else
+	options.clear();
+	options_buffer.clear();
+
+	version.version = TDS_VERSION_2008_B;
+	version.sub_build = 0;
+	encryption = 0;
+	mars = 0;
+	instopt = 0;
+	thread_id = 0x424242;
+
+	/* options */
+#define _ENC(opt) encode_option(options_buffer, option::tt_##opt, &opt, sizeof(opt))
+	_ENC(version);
+	_ENC(encryption);
+	_ENC(instopt);
+	_ENC(thread_id);
+	_ENC(mars);
+#undef _ENC
+
+	/* update options */
+	unsigned short options_offset = sizeof(option) * options.size() + 1 /* tt_terminator */;
+	std::vector<option>::iterator iter = options.begin();
+	for ( ; iter != options.end(); ++iter)
+	{
+		iter->encode(output, options_offset);
+	}
+
+	output.put((unsigned char)option::tt_terminator);
+	output.put(options_buffer);
+
+	return true;
+#endif
+}
+
+bool frame_prelogin::decode(buffer& input)
+{
+	size_t offset = 0;
+	while (offset < input.size())
+	{
+		option hdr;
+		input.copy_to(offset, 1, &hdr.token);
+		if (hdr.token == 0xff)
+			break;
+
+		input.copy_to(offset, sizeof(hdr), &hdr);
+		offset += sizeof(hdr);
+
+		hdr.offset = ntohs(hdr.offset);
+		hdr.length = ntohs(hdr.length);
+
+		TP_DEBUG("processing option: 0x%02x", hdr.token);
+		switch(hdr.token)
+		{
+		case option::tt_version:
+		{
+			option_version ver;
+			input.copy_to(hdr.offset, hdr.length, &ver);
+			TP_DEBUG("version=%08x, sub_build=%d", ver.version,
+				ver.sub_build);
+			break;
+		}
+		default:
+		{
+			std::string raw;
+			raw.resize(hdr.length);
+			input.copy_to(hdr.offset, hdr.length, &raw[0]);
+
+			TP_DEBUG_DUMP(&raw[0], raw.size(), "option: token=%d, len=%d", (int)hdr.token, (int)hdr.length);
+		}
+		}
+	}
+
+	input.drain(input.size());
+	return true;
+
+	return true;
 }
 
 frame_login7::frame_login7()
@@ -415,13 +504,175 @@ bool frame_token_envchange::decode(const frame_token_header& hdr, buffer& input)
 	return true;
 }
 
+bool column_info::decode(buffer& input)
+{
+	if (!input.fetch(&fixed1, sizeof(fixed1)))
+		return false;
+
+	TP_DEBUG("user_type=%08x", fixed1.user_type);
+	TP_DEBUG("flags=%04x", fixed1.flags);
+
+	if (!input.fetch(type))
+		return false;
+
+	TP_DEBUG("type=%02x", type);
+
+	memset(&length, 0, sizeof(length));
+	switch(type)
+	{
+	case dt_intn:
+	{
+		uint8_t _len;
+		if (!input.fetch(_len))
+			return false;
+		length = _len;
+		TP_DEBUG("INTN(%d)", (int)length);
+		break;
+	}
+	default:
+	{
+		size_t size = input.size();
+		std::string unknown;
+		unknown.resize(size);
+		input.copy_to(0, size, &unknown[0]);
+		input.drain(size);
+		TP_DEBUG_DUMP(&unknown[0], unknown.size(), "error: unknown column");
+		return false;
+	}
+	}
+
+	if (!input.fetch_b_varchar(col_name))
+		return false;
+
+	TP_DEBUG("col_name: [%s]", col_name.c_str());
+
+	return true;
+}
+
+void frame_token_colmetadata::clear()
+{
+	info.clear();
+}
+
+bool frame_token_colmetadata::decode(buffer& input)
+{
+	unsigned short count;
+	if (!input.fetch(count))
+		return false;
+
+	TP_DEBUG("columns: %u", count);
+	if (count < 1 || count == 0xFFFF)
+		return true;
+
+	unsigned short i;
+	for (i = 0; i < count; ++i)
+	{
+		column_info elm;
+		if (!elm.decode(input))
+			return false;
+
+		info.push_back(elm);
+	}
+	TP_DEBUG("COLMETADATA is parsed. columns: %d", (int)info.size());
+
+	return true;
+}
+
+bool column_data::decode(const column_info& info, buffer& input)
+{
+	switch(info.type)
+	{
+	case dt_intn: switch(info.length)
+	{
+		TP_DEBUG("fetch INTN(%d)", (int)info.length);
+		case 1:
+		{
+			int8_t v;
+			if (!input.fetch(v))
+				return false;
+			data.v_bigint = v;
+			return true;
+		}	
+		case 2:
+		{
+			int16_t v;
+			if (!input.fetch(v))
+				return false;
+			data.v_bigint = v;
+			return true;
+		}
+		case 4:
+		{
+			int32_t v;
+			if (!input.fetch(v))
+				return false;
+			data.v_bigint = v;
+			return true;
+		}
+		case 8:
+		{
+			int64_t v;
+			if (!input.fetch(v))
+				return false;
+			data.v_bigint = v;
+			return true;
+		}
+	}
+	default:
+		return false;
+	}
+
+	return true;
+}
+
+bool frame_token_row::decode(const frame_token_colmetadata& meta, buffer& input)
+{
+	frame_token_colmetadata::info_type::const_iterator iter =
+		meta.info.begin();
+	for ( ; iter != meta.info.end(); ++ iter)
+	{
+		column_data elm;
+		if (!elm.decode(*iter, input))
+			return false;
+
+		data.push_back(elm);
+	}
+
+	return true;
+}
+
+frame_response::frame_response()
+	: auth_success(false)
+{
+}
+
 bool frame_response::decode(buffer& input)
 {
 	while (!input.empty())
 	{
 		frame_token_header hdr;
-		if (!input.fetch(hdr))
+
+		if (!input.fetch(hdr.type))
 			return false;
+		TP_DEBUG("processing token: 0x%02x", hdr.type);
+
+		int token_class = frame_token_get_class(hdr.type);
+
+		switch (token_class)
+		{
+		case tce_zero_len:
+			TP_DEBUG("token is zero length"); break;
+		case tce_fixed_len:
+			TP_DEBUG("token is fixed length"); break;
+		case tce_var_len:
+			TP_DEBUG("token is variable length");
+			if (!input.fetch(hdr.length))
+				return false;
+			break;
+		case tce_var_count:
+			// COLMETADATA & ALTMETADATA
+			TP_DEBUG("token is variable count"); break;
+		}
 
 		switch(hdr.type)
 		{
@@ -438,6 +689,7 @@ bool frame_response::decode(buffer& input)
 			frame_token_loginack ack;
 			if (!ack.decode(input))
 				return false;
+			auth_success = true;
 			break;
 		}
 		case ft_envchange:
@@ -448,14 +700,116 @@ bool frame_response::decode(buffer& input)
 			break;
 		}
 		case ft_done:
+			/* TODO: fixme! May have many "DONE" tokens */
 			input.drain(input.size());
 			break;
+		case ft_colmetadata:
+		{
+			columns_info.clear();
+			rows.clear();
+			if (!columns_info.decode(input))
+				return false;
+			break;
+		}
+		case ft_row:
+		{
+			TP_DEBUG("fetch row");
+			frame_token_row row;
+			if (!row.decode(columns_info, input))
+				return false;
+
+			rows.push_back(row);
+			break;
+		}
 		default:
-			TP_DEBUG("error: unknown token: 0x%02x", hdr.type);
-			return false;
+		{
+			size_t size = input.size();
+			TP_DEBUG("size=%" PRIiPTR, size);
+			TP_DEBUG("hdr.length=%d", hdr.length);
+			std::string unknown;
+			unknown.resize(size);
+			input.copy_to(0, size, &unknown[0]);
+			input.drain(size);
+			TP_DEBUG_DUMP(&unknown[0], unknown.size(), "error: unknown token: 0x%02x (len %d)", hdr.type, (int)size);
+		}
 		};
 	}
 
+	return true;
+}
+
+bool query_header::encode(buffer& output)
+{
+	buffer data;
+	if (!encode_data(data))
+		return false;
+
+	fixed.length = data.size() + sizeof(fixed);
+	output.put(&fixed, sizeof(fixed));
+	output.put(data);
+
+	return true;
+}
+
+bool query_header_trans::encode_data(buffer& output)
+{
+#define _X(f) TP_DEBUG_DUMP(&f, sizeof(f), #f)
+	_X(fixed.transaction_descriptor);
+	_X(fixed.outstanding_request_count);
+#undef _X
+	output.put(&fixed, sizeof(fixed));
+	return true;
+}
+
+query_headers::query_headers()
+{
+}
+
+query_headers::~query_headers()
+{
+	clear();
+}
+
+void query_headers::clear()
+{
+	value_type::iterator iter = headers.begin();
+	for ( ; iter != headers.end(); ++iter)
+		if (*iter)
+			delete *iter;
+
+	headers.clear();
+}
+
+bool query_headers::encode(buffer& output)
+{
+	buffer body;
+
+	value_type::iterator iter = headers.begin();
+	for ( ; iter != headers.end(); ++iter)
+		if (*iter && !(*iter)->encode(body))
+			return false;
+
+	total_len = body.size() + sizeof(total_len);
+	output.put(total_len);
+	output.put(body);
+
+	return true;
+}
+
+bool frame_sql_batch::encode(buffer& output)
+{
+	if (!auto_commit)
+	{
+		TP_DEBUG("only auto commit mode is supported!");
+		return false;
+	}
+
+	query_headers qh;
+	qh.headers.push_back(new query_header_trans(1, 0));
+	if (!qh.encode(output))
+		return false;
+
+	output.put_utf16(query);
 	return true;
 }
 
