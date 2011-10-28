@@ -508,6 +508,36 @@ struct frame_token_envchange
 	bool decode(const frame_token_header& hdr, buffer& input);
 };
 
+struct frame_token_done
+{
+	enum {
+		DONE_FINAL = 0x0000,  /**< This DONE is the final DONE in the request. */
+		DONE_MORE = 0x0001, /**< This DONE message is not the final DONE message in the response.
+				    Subsequent data streams to follow. */
+		DONE_ERROR = 0x0002, /**< An error occurred on the current SQL statement.
+				     A preceding ERROR token SHOULD be sent when this bit is set.*/
+		DONE_INXACT = 0x0004, /**< A transaction is in progress. */
+		DONE_COUNT = 0x0010, /**< The DoneRowCount value is valid.
+			      This is used to distinguish between a valid value of 0 for
+			      DoneRowCount or just an initialized variable. */
+		DONE_ATTN = 0x0020, /**< The DONE message is a server acknowledgement of
+				    a client ATTENTION message */
+		DONE_SRVERROR = 0x0100, /**< Used in place of DONE_ERROR when an error
+					  occurred on the current SQL statement, which is severe enough
+					  to require the result set, if any, to be discarded. */
+	} status_e;
+
+#pragma pack(push, 1)
+	struct
+	{
+		unsigned short status;
+		unsigned short curcmd;
+		uint64_t rowcount;
+	} fixed;
+#pragma pack(pop)
+	bool decode(buffer& input);
+};
+
 /* type info
 
    FIXEDLENTYPE = NULLTYPE
@@ -621,6 +651,10 @@ struct frame_token_colmetadata
 
 struct column_data
 {
+	column_data() : isNull(false) { }
+
+	bool isNull;
+
 	//column_data() { }
 	//virtual ~column_data() { }
 	bool decode(const column_info& info, buffer& input);

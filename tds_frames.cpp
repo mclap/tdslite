@@ -581,6 +581,16 @@ bool frame_token_colmetadata::decode(buffer& input)
 bool column_data::decode(const column_info& info, buffer& input)
 {
 	TP_DEBUG("info.type=0x%02x, info.length=%d", info.type, info.length);
+	uint8_t varbyte_len;
+	if (!input.fetch(varbyte_len))
+		return false;
+
+	TP_DEBUG("varbyte_len=%d", varbyte_len);
+	if (varbyte_len == 0)
+	{
+		isNull = true;
+		return true;
+	}
 
 	switch(info.type)
 	{
@@ -645,6 +655,17 @@ bool frame_token_row::decode(const frame_token_colmetadata& meta, buffer& input)
 	return true;
 }
 
+bool frame_token_done::decode(buffer& input)
+{
+	if (!input.fetch(&fixed, sizeof(fixed)))
+		return false;
+
+	TP_DEBUG("done.status=%04x", fixed.status);
+	TP_DEBUG("done.curcmd=%04x", fixed.curcmd);
+	TP_DEBUG("done.rowcount=%" PRIu64, fixed.rowcount);
+	return true;
+}
+
 frame_response::frame_response()
 	: auth_success(false)
 {
@@ -706,9 +727,12 @@ bool frame_response::decode(buffer& input)
 			break;
 		}
 		case ft_done:
-			/* TODO: fixme! May have many "DONE" tokens */
-			input.drain(input.size());
+		{
+			frame_token_done elm;
+			if (!elm.decode(input))
+				return false;
 			break;
+		}
 		case ft_colmetadata:
 		{
 			columns_info.clear();
