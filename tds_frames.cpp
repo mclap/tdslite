@@ -106,6 +106,23 @@ bool buffer::copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter 
 	return true;
 }
 
+bool buffer::copy_dos_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f)
+{
+	std::vector<char> tmp, buf;
+	tmp.assign(data.begin()+off, data.begin()+off+len);
+
+	if (f)
+		f(&tmp[0], len);
+
+	// FIXME: dos_to_utf8.convert(&tmp[0], len, buf);
+	buf = tmp;
+
+	dst.assign(&buf[0], buf.size());
+	TP_DEBUG("dos: \"%s\"", dst.c_str());
+
+	return true;
+}
+
 bool buffer::empty()
 {
 	return data.empty();
@@ -541,6 +558,17 @@ bool column_info::decode(buffer& input)
 		TP_DEBUG("INTN(%d)", (int)length);
 		break;
 	}
+	case dt_bigvarchar:
+	{
+		uint16_t _len;
+		if (!input.fetch(_len))
+			return false;
+		length = _len;
+		TP_DEBUG("BIGVARCHAR(%d)", (int)length);
+		if (!input.fetch(&collation, sizeof(collation)))
+			return false;
+		break;
+	}
 	default:
 	{
 		size_t size = input.size();
@@ -548,7 +576,7 @@ bool column_info::decode(buffer& input)
 		unknown.resize(size);
 		input.copy_to(0, size, &unknown[0]);
 		input.drain(size);
-		TP_DEBUG_DUMP(&unknown[0], unknown.size(), "error: unknown column");
+		TP_DEBUG_DUMP(&unknown[0], unknown.size(), "error: unknown column: 0x%02x", type);
 		return false;
 	}
 	}
@@ -593,20 +621,21 @@ bool frame_token_colmetadata::decode(buffer& input)
 bool column_data::decode(const column_info& info, buffer& input)
 {
 	TP_DEBUG("info.type=0x%02x, info.length=%d", info.type, info.length);
-	uint8_t varbyte_len;
-	if (!input.fetch(varbyte_len))
-		return false;
-
-	TP_DEBUG("varbyte_len=%d", varbyte_len);
-	if (varbyte_len == 0)
-	{
-		isNull = true;
-		return true;
-	}
 
 	switch(info.type)
 	{
 	case dt_intn:
+		uint8_t varbyte_len;
+		if (!input.fetch(varbyte_len))
+			return false;
+
+		TP_DEBUG("varbyte_len=%d", varbyte_len);
+		if (varbyte_len == 0)
+		{
+			isNull = true;
+			return true;
+		}
+
 		TP_DEBUG("fetch INTN(%d)", (int)info.length);
 		switch(info.length)
 		{
@@ -644,6 +673,25 @@ bool column_data::decode(const column_info& info, buffer& input)
 			return true;
 		}
 		}
+		break;
+	case dt_bigvarchar:
+		uint16_t len;
+		if (!input.fetch(len))
+			return false;
+
+		TP_DEBUG("len=%d", len);
+		if (len == 0)
+		{
+			isNull = true;
+			return true;
+		}
+
+		if (!input.copy_dos_to_utf8(0, len, raw))
+			return false;
+
+		input.drain(len);
+
+		break;
 	default:
 		return false;
 	}

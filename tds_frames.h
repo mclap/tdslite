@@ -59,6 +59,7 @@ public:
 	bool copy_to(size_t off, size_t len, void *dst);
 
 	bool copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f = 0);
+	bool copy_dos_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f = 0);
 
 	bool empty();
 
@@ -152,7 +153,22 @@ struct frame_header
 	bool push(net_t cn);
 	bool pull(net_t cn);
 };
+#pragma pack(pop)
 
+#pragma pack(push, 1)
+struct lcid_info
+{
+	uint32_t lcid:12;
+	struct {
+		unsigned char f_ignore_case:1;
+		unsigned char f_ignore_accent:1;
+		unsigned char f_ignore_width:1;
+		unsigned char f_ignore_kana:1;
+		unsigned char f_binary:1;
+		unsigned char f_reserved:3;
+	} col_flags;
+	unsigned char version:4;
+};
 #pragma pack(pop)
 
 struct frame_prelogin 
@@ -275,18 +291,7 @@ struct frame_login7
 
 		/* offset: 32, 0x20 */
 
-		struct {
-			uint32_t lcid:12;
-			struct {
-				unsigned char f_ignore_case:1;
-				unsigned char f_ignore_accent:1;
-				unsigned char f_ignore_width:1;
-				unsigned char f_ignore_kana:1;
-				unsigned char f_binary:1;
-				unsigned char f_reserved:3;
-			} col_flags;
-			unsigned char version:4;
-		} client_lcid;
+		lcid_info client_lcid;
 
 		/* offset: 36, 0x24 */
 
@@ -601,6 +606,7 @@ enum data_type
 	dt_money4 = 0x7a, ///< 4 bytes
 	dt_int8 = 0x7f, ///< 8 bytes
 	dt_intn = 0x26, ///< 1, 2, 4 or 8 bytes
+	dt_bigvarchar = 0xa7,
 };
 
 struct column_info
@@ -632,9 +638,14 @@ struct column_info
 	uint8_t type;
 
 	uint32_t length;
-#pragma pack(pop)
 
 	//TYPE_INFO;
+#pragma pack(push, 1)
+	struct {
+		lcid_info lcid;
+		uint8_t sort_id;
+	} collation;
+#pragma pack(pop)
 
 	std::vector<std::string> table_name;
 	std::string col_name;

@@ -33,6 +33,7 @@ set(check_PROGRAMS
 	check-frame_login7
 	check-frame_error
 	check-frame_response_introw
+	check-frame_response
 	)
 
 function(register_tests srcprefix names)
