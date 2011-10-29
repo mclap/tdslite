@@ -39,5 +39,5 @@ int main()
 	tmp.fetch(header);
 	assert(true == body.decode(tmp));
 
-	return true;
+	return 0;
 }

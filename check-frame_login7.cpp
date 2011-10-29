@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h>
 #include "tds_frames.h"
 #include "debug.h"
 

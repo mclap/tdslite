@@ -1,9 +1,21 @@
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS // for PRI* macros
+#endif
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <inttypes.h>
 
 #include "tds_frames.h"
 
 #include "debug.h"
+
+#if defined(linux)
+#define ICONV_CHAR_PP(v) (char **)(v)
+#else
+#define ICONV_CHAR_PP(v) (v)
+#endif
 
 namespace tds
 {
@@ -55,7 +67,7 @@ void iconv_convert::convert(const void *ptr, const size_t len, std::vector<char>
 	size_t inleft = len;
 	size_t outleft = buf.size();
 
-	int nconv = iconv(h, &inptr, &inleft, &outptr, &outleft);
+	int nconv = iconv(h, ICONV_CHAR_PP(&inptr), &inleft, &outptr, &outleft);
 	TP_DEBUG("nconv=%d, errno=%d, outleft=%d, len=%d", nconv, errno, (int)outleft, (int)len);
 
 	buf.resize(buf.size() - outleft);
