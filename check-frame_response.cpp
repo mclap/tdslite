@@ -41,6 +41,10 @@ int main()
 
 	tmp.fetch(header);
 	assert(true == body.decode(tmp));
+	assert(1 == body.rows.size());
+	assert(1 == body.rows[0].data.size());
+	assert(false == body.rows[0].data[0].isNull);
+	assert("foo" == body.rows[0].data[0].raw);
 
 	return 0;
 }

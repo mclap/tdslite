@@ -38,6 +38,10 @@ int main()
 
 	tmp.fetch(header);
 	assert(true == body.decode(tmp));
+	assert(1 == body.rows.size());
+	assert(1 == body.rows[0].data.size());
+	assert(false == body.rows[0].data[0].isNull);
+	assert(0 == body.rows[0].data[0].data.v_bigint);
 
 	return 0;
 }
