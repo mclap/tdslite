@@ -558,15 +558,45 @@ bool column_info::decode(buffer& input)
 		TP_DEBUG("INTN(%d)", (int)length);
 		break;
 	}
+	case dt_bit:
+	case dt_int1:
+		length = 1;
+		break;
+	case dt_int2:
+		length = 2;
+		break;
+	case dt_int4:
+		length = 4;
+		break;
+	case dt_int8:
+		length = 8;
+		break;
 	case dt_bigvarchar:
+	case dt_nvarchar:
 	{
 		uint16_t _len;
 		if (!input.fetch(_len))
 			return false;
 		length = _len;
-		TP_DEBUG("BIGVARCHAR(%d)", (int)length);
+		switch (type) {
+		case dt_bigvarchar: TP_DEBUG("BIGVARCHAR(%d)", (int)length); break;
+		case dt_nvarchar: TP_DEBUG("NVARCHAR(%d)", (int)length); break;
+		}
+
 		if (!input.fetch(&collation, sizeof(collation)))
 			return false;
+		break;
+	}
+	case dt_bigbinary:
+	{
+		uint16_t _len;
+		if (!input.fetch(_len))
+			return false;
+		length = _len;
+		switch (type) {
+		case dt_bigbinary: TP_DEBUG("BIGBINARY(%d)", (int)length); break;
+		}
+
 		break;
 	}
 	default:
@@ -670,6 +700,7 @@ bool column_data::decode(const column_info& info, buffer& input)
 			if (!input.fetch(v))
 				return false;
 			data.v_bigint = v;
+			TP_DEBUG("v_bigint=%" PRId64, v);
 			return true;
 		}
 		}

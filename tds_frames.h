@@ -607,6 +607,8 @@ enum data_type
 	dt_int8 = 0x7f, ///< 8 bytes
 	dt_intn = 0x26, ///< 1, 2, 4 or 8 bytes
 	dt_bigvarchar = 0xa7,
+	dt_nvarchar = 0xe7,
+	dt_bigbinary = 0xad,
 };
 
 struct column_info
