@@ -436,6 +436,7 @@ enum frame_token_e
 	ft_error = 0xaa,
 	ft_loginack = 0xad,
 	ft_row = 0xd1,
+	ft_nbcrow = 0xd2,
 	ft_envchange = 0xe3,
 	ft_done = 0xfd
 };

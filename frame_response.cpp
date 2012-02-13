@@ -85,9 +85,10 @@ bool frame_response::decode(buffer& input)
 			break;
 		}
 		case ft_row:
+		case ft_nbcrow:
 		{
 			TP_DEBUG("fetch row");
-			frame_token_row row;
+			frame_token_row row(hdr.type);
 			if (!row.decode(columns_info, input))
 				return false;
 

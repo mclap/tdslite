@@ -652,6 +652,9 @@ bool column_data::decode(const column_info& info, buffer& input)
 {
 	TP_DEBUG("info.type=0x%02x, info.length=%d", info.type, info.length);
 
+	// FIXME: parse
+	// [TextPointer TimeStamp]
+
 	switch(info.type)
 	{
 	case dt_intn:
