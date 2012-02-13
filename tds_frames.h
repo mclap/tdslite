@@ -684,26 +684,6 @@ struct column_data
 
 //typedef std::tr1::shared_ptr<shared_ptr> column_data_ptr;
 
-struct frame_token_row
-{
-	//std::deque<column_data_ptr> columns;
-	std::deque<column_data> data;
-
-	bool decode(const frame_token_colmetadata& meta, buffer& input);
-};
-
-struct frame_response
-{
-	std::deque<frame_token_error> errors;
-	bool auth_success;
-	frame_token_colmetadata columns_info;
-	std::deque<frame_token_row> rows;
-
-	frame_response();
-
-	bool decode(buffer& input);
-};
-
 struct frame_trans_request
 {
 	/*
@@ -714,3 +694,5 @@ struct frame_trans_request
 };
 
 } // namespace tds
+
+#include "frame_response.h"

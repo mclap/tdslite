@@ -22,6 +22,8 @@ add_library(tdslite
 	debug.c debug.h
 	tds_frames.cpp tds_frames.h
 	tds_connection.cpp tds_connection.h
+	frame_token_row.cpp frame_token_row.h
+	frame_response.cpp frame_response.h
 	)
 
 add_executable(cli

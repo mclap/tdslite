@@ -2,6 +2,7 @@
 
 #include "net.h"
 #include "tds_frames.h"
+#include "frame_response.h"
 
 namespace tds
 {
