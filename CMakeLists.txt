@@ -36,6 +36,7 @@ set(check_PROGRAMS
 	check-frame_error
 	check-frame_response_introw
 	check-frame_response
+	check-frame_response_nbcrow
 	)
 
 function(register_tests srcprefix names)

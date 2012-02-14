@@ -648,6 +648,12 @@ bool frame_token_colmetadata::decode(buffer& input)
 	return true;
 }
 
+column_data::column_data()
+	: isNull(false)
+{
+	memset(&data, 0, sizeof(data));
+}
+
 bool column_data::decode(const column_info& info, buffer& input)
 {
 	TP_DEBUG("info.type=0x%02x, info.length=%d", info.type, info.length);

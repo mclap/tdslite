@@ -666,12 +666,10 @@ struct frame_token_colmetadata
 
 struct column_data
 {
-	column_data() : isNull(false) { }
+	column_data();
 
 	bool isNull;
 
-	//column_data() { }
-	//virtual ~column_data() { }
 	bool decode(const column_info& info, buffer& input);
 
 	union
