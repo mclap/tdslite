@@ -1,11 +1,13 @@
 #pragma once
-#include <stdint.h>
+
+#include "tdslite/net.h"
+
 #include <vector>
 #include <string>
 #include <deque>
+#include <cstdint>
 
 #include <iconv.h>
-#include "net.h"
 
 #define TDS_VERSION_2005        0x02000972
 #define TDS_VERSION_2008_A      0x03000A73
@@ -694,4 +696,4 @@ struct frame_trans_request
 
 } // namespace tds
 
-#include "frame_response.h"
+#include "tdslite/frame_response.h"

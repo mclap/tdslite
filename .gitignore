@@ -1,7 +1,2 @@
-CMakeCache.txt
-CMakeFiles
-*.cmake
-Makefile
-*.a
 .*
-*.core
+build*

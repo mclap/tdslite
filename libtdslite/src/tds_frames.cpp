@@ -1,15 +1,16 @@
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS // for PRI* macros
 #endif
+
+#include "tdslite/tds_frames.h"
+#include "tdslite/debug.h"
+
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <inttypes.h>
 
-#include "tds_frames.h"
-
-#include "debug.h"
 
 #if defined(linux)
 #define ICONV_CHAR_PP(v) (char **)(v)

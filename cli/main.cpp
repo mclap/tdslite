@@ -1,7 +1,7 @@
+#include "tdslite/tds_connection.h"
+
 #include <stdlib.h>
 #include <stdio.h>
-
-#include "tds_connection.h"
 
 int main(int argc, char *argv[])
 {

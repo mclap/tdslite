@@ -1,9 +1,12 @@
-#include <assert.h>
-#include "tds_frames.h"
-#include "debug.h"
+#include "tdslite/tds_frames.h"
+#include "tdslite/debug.h"
 
-int main()
+#include <gtest/gtest.h>
+
+TEST(Frame, Response)
 {
+#define assert(v) EXPECT_TRUE(v)
+
     const unsigned char sample[] = {
         /* header */
         0x04, // type
@@ -45,7 +48,4 @@ int main()
     assert(1 == body.rows[0].data.size());
     assert(false == body.rows[0].data[0].isNull);
     assert("foo" == body.rows[0].data[0].raw);
-
-    return 0;
 }
-

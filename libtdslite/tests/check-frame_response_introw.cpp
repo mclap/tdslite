@@ -1,9 +1,12 @@
-#include <assert.h>
-#include "tds_frames.h"
-#include "debug.h"
+#include "tdslite/tds_frames.h"
+#include "tdslite/debug.h"
 
-int main()
+#include <gtest/gtest.h>
+
+TEST(Frame, ResponseIntRow)
 {
+#define assert(v) EXPECT_TRUE(v)
+
     /* this is server response to: select count(*) from [table]r
      * response should contains:
      * 1 row: count(*) = 0
@@ -42,6 +45,4 @@ int main()
     assert(1 == body.rows[0].data.size());
     assert(false == body.rows[0].data[0].isNull);
     assert(0 == body.rows[0].data[0].data.v_bigint);
-
-    return 0;
 }

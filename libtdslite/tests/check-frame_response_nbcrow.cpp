@@ -1,6 +1,7 @@
-#include <assert.h>
-#include "tds_frames.h"
-#include "debug.h"
+#include "tdslite/tds_frames.h"
+#include "tdslite/debug.h"
+
+#include <gtest/gtest.h>
 
 #include <iostream>
 
@@ -8,8 +9,10 @@
 #define ISNULL(row,column) (RP(row,column).isNull)
 #define VINT(row,column) (RP(row,column).data.v_bigint)
 
-int main()
+TEST(Frame, ResponseNbcRow)
 {
+#define assert(v) EXPECT_TRUE(v)
+
     /*
      * test 1: * SELECT NULL AS c1, NULL AS c2
      * result: 1 row (NULL, NULL)
@@ -84,6 +87,4 @@ int main()
         assert(1 == VINT(2,0));
         assert(0 == VINT(2,1));
     }
-
-    return 0;
 }

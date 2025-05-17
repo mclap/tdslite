@@ -1,50 +1,17 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.23)
 project(tdslite)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 enable_testing()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(ICONV_LIB "")
-else(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    include_directories(/usr/local/include)
-    find_library(ICONV_LIB NAMES iconv PATHS /usr/lib /usr/local/lib)
-endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+find_package(Iconv REQUIRED)
+find_package(GTest REQUIRED)
 
-if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE DEBUG)
-endif(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS_PROFILE        "-g3 -fno-inline -O0")
-    set(CMAKE_C_FLAGS_PROFILE          "-g3 -fno-inline -O0")
-endif (CMAKE_COMPILER_IS_GNUCXX)
+endif()
 
-add_library(tdslite
-    net.c net.h
-    debug.c debug.h
-    tds_frames.cpp tds_frames.h
-    tds_connection.cpp tds_connection.h
-    frame_token_row.cpp frame_token_row.h
-    frame_response.cpp frame_response.h
-    )
-
-add_executable(cli
-    main.cpp
-    )
-target_link_libraries(cli tdslite ${ICONV_LIB})
-
-set(check_PROGRAMS
-    check-frame_login7
-    check-frame_error
-    check-frame_response_introw
-    check-frame_response
-    check-frame_response_nbcrow
-    )
-
-function(register_tests srcprefix names)
-    foreach(cp ${names})
-        add_executable(${cp} ${srcprefix}${cp}.cpp)
-        target_link_libraries(${cp} tdslite ${ICONV_LIB})
-        add_test(${cp} ${cp})
-    endforeach(cp)
-endfunction(register_tests)
-
-register_tests(./ "${check_PROGRAMS}")
+add_subdirectory(libtdslite)
+add_subdirectory(cli)

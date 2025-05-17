@@ -1,10 +1,12 @@
-#include <assert.h>
-#include <string.h>
-#include "tds_frames.h"
-#include "debug.h"
+#include "tdslite/tds_frames.h"
+#include "tdslite/debug.h"
 
-int main()
+#include <gtest/gtest.h>
+
+TEST(Frame, Login7)
 {
+#define assert(v) EXPECT_TRUE(v)
+
     const unsigned char sample[] = {
         0x10,0x01,0x00,0x90,0x00,0x00,0x01,0x00,0x88,0x00,0x00,0x00,
         0x02,0x00,0x09,0x72,0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x07,
@@ -42,6 +44,4 @@ int main()
     TP_DEBUG_DUMP(encoded, tmp.size(), "encoded, len=%d", (int)(tmp.size()));
     assert(sizeof(sample) == tmp.size());
     assert(0 == memcmp(sample, encoded, tmp.size()));
-
-    return 0;
 }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "net.h"
-#include "tds_frames.h"
-#include "frame_response.h"
+#include "tdslite/net.h"
+#include "tdslite/tds_frames.h"
+#include "tdslite/frame_response.h"
 
 namespace tds
 {

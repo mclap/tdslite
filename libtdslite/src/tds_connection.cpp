@@ -1,15 +1,14 @@
+#include "tdslite/tds_connection.h"
+#include "tdslite/debug.h"
+#include "tdslite/tds_frames.h"
+
 #include <arpa/inet.h>
 #include <sys/types.h>
-
-#include "tds_connection.h"
 
 #include <vector>
 #include <string>
 #include <iterator>
 #include <algorithm>
-
-#include "debug.h"
-#include "tds_frames.h"
 
 namespace tds
 {

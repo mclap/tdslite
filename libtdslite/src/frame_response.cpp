@@ -1,10 +1,12 @@
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS // for PRI* macros
 #endif
+
+#include "tdslite/debug.h"
+#include "tdslite/frame_response.h"
+
 #include <inttypes.h>
 
-#include "debug.h"
-#include "frame_response.h"
 
 namespace tds
 {

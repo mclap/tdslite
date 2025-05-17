@@ -1,7 +1,7 @@
 #pragma once
 
-#include "tds_frames.h"
-#include "frame_token_row.h"
+#include "tdslite/tds_frames.h"
+#include "tdslite/frame_token_row.h"
 
 namespace tds
 {

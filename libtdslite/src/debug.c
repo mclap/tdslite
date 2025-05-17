@@ -1,11 +1,11 @@
+#include "tdslite/debug.h"
+
 #include <errno.h>
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "debug.h"
-
-inline
+static
 unsigned char toprint(unsigned char c)
 {
     if (c < ' ' || c >= 0x7f)

@@ -1,8 +1,9 @@
-#include <assert.h>
-#include "tds_frames.h"
-#include "debug.h"
+#include "tdslite/tds_frames.h"
+#include "tdslite/debug.h"
 
-int main()
+#include <gtest/gtest.h>
+
+TEST(Frame, FrameError)
 {
     const unsigned char sample[] = {
         0x04,0x01,0x00,0x6a,0x00,0x4b,0x01,0x00,
@@ -36,13 +37,10 @@ int main()
     tds::frame_response body;
 
     tmp.fetch(header);
-    assert(true == body.decode(tmp));
-    assert(1 == body.errors.size());
-    assert("SQLTEST" == body.errors[0].server_name);
-    assert("" == body.errors[0].proc_name);
-    assert(1 == body.errors[0].line);
-    assert("Login failed for user 'sa'." == body.errors[0].error_text);
-
-
-    return 0;
+    EXPECT_TRUE(body.decode(tmp));
+    EXPECT_EQ(1, body.errors.size());
+    EXPECT_EQ("SQLTEST", body.errors[0].server_name);
+    EXPECT_EQ("", body.errors[0].proc_name);
+    EXPECT_EQ(1, body.errors[0].line);
+    EXPECT_EQ("Login failed for user 'sa'.", body.errors[0].error_text);
 }
