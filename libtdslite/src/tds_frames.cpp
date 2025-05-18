@@ -94,6 +94,7 @@ bool buffer::copy_to(size_t off, size_t len, void *dst)
 
 bool buffer::copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f)
 {
+    if (!len) { dst.clear(); return true; }
     std::vector<char> tmp, buf;
     tmp.assign(data.begin()+off, data.begin()+off+len*2);
 

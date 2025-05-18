@@ -5,8 +5,6 @@
 
 TEST(Frame, Login7)
 {
-#define assert(v) EXPECT_TRUE(v)
-
     const unsigned char sample[] = {
         0x10,0x01,0x00,0x90,0x00,0x00,0x01,0x00,0x88,0x00,0x00,0x00,
         0x02,0x00,0x09,0x72,0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x07,
@@ -42,6 +40,6 @@ TEST(Frame, Login7)
 
     TP_DEBUG_DUMP(sample, sizeof(sample), "source, len=%d", (int)(sizeof(sample)));
     TP_DEBUG_DUMP(encoded, tmp.size(), "encoded, len=%d", (int)(tmp.size()));
-    assert(sizeof(sample) == tmp.size());
-    assert(0 == memcmp(sample, encoded, tmp.size()));
+    EXPECT_EQ(sizeof(sample), tmp.size());
+    EXPECT_EQ(0, memcmp(sample, encoded, tmp.size()));
 }

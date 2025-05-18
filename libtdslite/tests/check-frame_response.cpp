@@ -5,17 +5,15 @@
 
 TEST(Frame, Response)
 {
-#define assert(v) EXPECT_TRUE(v)
-
     const unsigned char sample[] = {
-        /* header */
+        // header
         0x04, // type
         01, // status
         0x00, 0x33, // lenght
         0x00, 0x00, // SPID
         0x01, // packet id
         0x00, // window
-        /* table response */
+        // table response
         0x81, // ft_colmetadata
         0x01, 0x00, // count
         0x00, 0x00, 0x00, 0x00, // user type
@@ -43,9 +41,9 @@ TEST(Frame, Response)
     tds::frame_response body;
 
     tmp.fetch(header);
-    assert(true == body.decode(tmp));
-    assert(1 == body.rows.size());
-    assert(1 == body.rows[0].data.size());
-    assert(false == body.rows[0].data[0].isNull);
-    assert("foo" == body.rows[0].data[0].raw);
+    EXPECT_TRUE(body.decode(tmp));
+    EXPECT_EQ(1, body.rows.size());
+    EXPECT_EQ(1, body.rows[0].data.size());
+    EXPECT_EQ(false, body.rows[0].data[0].isNull);
+    EXPECT_EQ("foo", body.rows[0].data[0].raw);
 }

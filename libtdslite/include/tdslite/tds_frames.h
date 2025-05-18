@@ -371,6 +371,7 @@ private:
         uint32_t length;
         uint16_t type;
     } fixed;
+#pragma pack(pop)
 };
 
 /*

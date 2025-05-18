@@ -1,3 +1,7 @@
+if (NOT TDS_BUILD_APPS)
+    return()
+endif()
+
 add_executable(cli
 	main.cpp
 	)
