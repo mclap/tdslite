@@ -7,12 +7,12 @@
 #include <iconv.h>
 #include "net.h"
 
-#define TDS_VERSION_2005	0x02000972
-#define TDS_VERSION_2008_A	0x03000A73
-#define TDS_VERSION_2008_B	0x03000B73
-#define TDS_VERSION_GEN_7_3	0x00000073
-#define TDS_VERSION_GEN_7_2	0x00000072
-#define TDS_VERSION_GEN_7_0	0x00000070
+#define TDS_VERSION_2005        0x02000972
+#define TDS_VERSION_2008_A      0x03000A73
+#define TDS_VERSION_2008_B      0x03000B73
+#define TDS_VERSION_GEN_7_3     0x00000073
+#define TDS_VERSION_GEN_7_2     0x00000072
+#define TDS_VERSION_GEN_7_0     0x00000070
 
 namespace tds
 {
@@ -20,79 +20,79 @@ namespace tds
 class iconv_convert
 {
 public:
-	iconv_convert(const char *_from, const char *_to);
+    iconv_convert(const char *_from, const char *_to);
 
-	~iconv_convert();
+    ~iconv_convert();
 
-	void convert(const void *ptr, const size_t len, std::vector<char>& buf);
+    void convert(const void *ptr, const size_t len, std::vector<char>& buf);
 
 private:
-	iconv_t h;
-	const char *from, *to;
+    iconv_t h;
+    const char *from, *to;
 };
 
 class buffer
 {
 public:
-	iconv_convert to_utf16;
-	iconv_convert to_utf8;
+    iconv_convert to_utf16;
+    iconv_convert to_utf8;
 
-	typedef void (*byte_filter)(void *ptr, size_t len);
+    typedef void (*byte_filter)(void *ptr, size_t len);
 
-	buffer();
-	~buffer();
+    buffer();
+    ~buffer();
 
-	bool fetch(void *ptr, size_t len)
-	{
-		copy_to(0, len, ptr);
-		drain(len);
-		return true;
-	}
+    bool fetch(void *ptr, size_t len)
+    {
+        copy_to(0, len, ptr);
+        drain(len);
+        return true;
+    }
 
-	template<typename T>
-	bool fetch(T& value)
-	{
-		fetch(&value, sizeof(value));
-		return true;
-	}
+    template<typename T>
+    bool fetch(T& value)
+    {
+        fetch(&value, sizeof(value));
+        return true;
+    }
 
-	bool copy_to(size_t off, size_t len, void *dst);
+    bool copy_to(size_t off, size_t len, void *dst);
 
-	bool copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f = 0);
-	bool copy_dos_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f = 0);
+    bool copy_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f = 0);
+    bool copy_dos_to_utf8(size_t off, size_t len, std::string& dst, byte_filter f = 0);
 
-	bool empty();
+    bool empty();
 
-	size_t size();
+    size_t size();
 
-	void clear();
-	void drain(size_t size);
+    void clear();
+    void drain(size_t size);
 
-	template<typename T>
-	void put(const T& value)
-	{
-		const unsigned char *begin = reinterpret_cast<const unsigned char *>(&value),
-		      *end = begin+sizeof(value);
+    template<typename T>
+    void put(const T& value)
+    {
+        const unsigned char *begin = reinterpret_cast<const unsigned char *>(&value),
+              *end = begin+sizeof(value);
 
-		std::copy (begin, end, std::back_inserter(data));
-	}
+        std::copy (begin, end, std::back_inserter(data));
+    }
 
-	void put(const void *ptr, size_t size);
-	void put(const std::string& value, bool include_nul = false);
-	void put_utf16(const std::string& value, buffer::byte_filter f = 0);
-	void put(const buffer& value);
-	bool push(net_t cn);
-	bool pull(net_t cn, size_t size);
+    void put(const void *ptr, size_t size);
+    void put(const std::string& value, bool include_nul = false);
+    void put_utf16(const std::string& value, buffer::byte_filter f = 0);
+    void put(const buffer& value);
+    bool push(net_t cn);
+    bool pull(net_t cn, size_t size);
 
-	bool fetch_b_varchar(std::string& out);
-	bool fetch_us_varchar(std::string& out);
-	void put_b_varchar(const std::string& value);
-	void put_us_varchar(const std::string& value);
+    bool fetch_b_varchar(std::string& out);
+    bool fetch_us_varchar(std::string& out);
+    void put_b_varchar(const std::string& value);
+    void put_us_varchar(const std::string& value);
 
 private:
-	typedef std::vector<unsigned char> buffer_type;
+    typedef std::vector<unsigned char> buffer_type;
 
-	buffer_type data;
+    buffer_type data;
 };
 
 /*
@@ -100,275 +100,275 @@ template <class Container>
 class AutoDelete
 {
 public:
-	typedef typename Container container_type;
-	typedef container_type::iterator iterator;
-	typedef container_type::const_iterator const_iterator;
-	typedef container_type::value_type value_type;
+    typedef typename Container container_type;
+    typedef container_type::iterator iterator;
+    typedef container_type::const_iterator const_iterator;
+    typedef container_type::value_type value_type;
 
-	AutoDelete() { }
+    AutoDelete() { }
 
-	~AutoDelete() { clear(); }
+    ~AutoDelete() { clear(); }
 
-	void clear()
-	{
+    void clear()
+    {
 
-	}
+    }
 protected:
-	Container
+    Container
 };
 */
 
 #pragma pack(push, 1)
 struct frame_header
 {
-	enum type_e
-	{
-		type_unknown = 0,
-		sql_batch = 1,
-		rpc = 3,
-		table_response = 4,
-		trans_request = 0x0E,
-		tds7_login = 16,
-		pre_login = 18,
-	};
+    enum type_e
+    {
+        type_unknown = 0,
+        sql_batch = 1,
+        rpc = 3,
+        table_response = 4,
+        trans_request = 0x0E,
+        tds7_login = 16,
+        pre_login = 18,
+    };
 
-	enum status_flags
-	{
-		normal = 0x00,
-		eom = 0x01,
-		ignore = 0x02,
-		reset_connection = 0x08,
-		reset_connection_skiptran = 0x10,
-	};
+    enum status_flags
+    {
+        normal = 0x00,
+        eom = 0x01,
+        ignore = 0x02,
+        reset_connection = 0x08,
+        reset_connection_skiptran = 0x10,
+    };
 
-	unsigned char type;
-	unsigned char status;
-	uint16_t ns_length;
-	uint16_t ns_spid;
-	unsigned char packet_id;
-	unsigned char window;
+    unsigned char type;
+    unsigned char status;
+    uint16_t ns_length;
+    uint16_t ns_spid;
+    unsigned char packet_id;
+    unsigned char window;
 
-	frame_header();
+    frame_header();
 
-	bool push(net_t cn);
-	bool pull(net_t cn);
+    bool push(net_t cn);
+    bool pull(net_t cn);
 };
 #pragma pack(pop)
 
 #pragma pack(push, 1)
 struct lcid_info
 {
-	uint32_t lcid:12;
-	struct {
-		unsigned char f_ignore_case:1;
-		unsigned char f_ignore_accent:1;
-		unsigned char f_ignore_width:1;
-		unsigned char f_ignore_kana:1;
-		unsigned char f_binary:1;
-		unsigned char f_reserved:3;
-	} col_flags;
-	unsigned char version:4;
+    uint32_t lcid:12;
+    struct {
+        unsigned char f_ignore_case:1;
+        unsigned char f_ignore_accent:1;
+        unsigned char f_ignore_width:1;
+        unsigned char f_ignore_kana:1;
+        unsigned char f_binary:1;
+        unsigned char f_reserved:3;
+    } col_flags;
+    unsigned char version:4;
 };
 #pragma pack(pop)
 
 struct frame_prelogin 
 {
 #pragma pack(push, 1)
-	struct option
-	{
-		enum token_type
-		{
-			tt_version = 0x00,
-			tt_encryption = 0x01,
-			tt_instopt = 0x02,
-			tt_thread_id = 0x03,
-			tt_mars = 0x04,
-			tt_terminator = 0xff
-		};
+    struct option
+    {
+        enum token_type
+        {
+            tt_version = 0x00,
+            tt_encryption = 0x01,
+            tt_instopt = 0x02,
+            tt_thread_id = 0x03,
+            tt_mars = 0x04,
+            tt_terminator = 0xff
+        };
 
-		unsigned char token;
-		unsigned short offset;
-		unsigned short length;
+        unsigned char token;
+        unsigned short offset;
+        unsigned short length;
 
-		option()
-		{
-			token = 0;
-			offset = length = 0;
-		}
+        option()
+        {
+            token = 0;
+            offset = length = 0;
+        }
 
-		option(const token_type _token, const unsigned short _offset, const unsigned short _length)
-			: token(_token), offset(_offset), length(_length)
-		{
-		}
+        option(const token_type _token, const unsigned short _offset, const unsigned short _length)
+            : token(_token), offset(_offset), length(_length)
+        {
+        }
 
-		void encode(buffer& output, const unsigned short base_offset);
-	};
+        void encode(buffer& output, const unsigned short base_offset);
+    };
 
-	struct option_version
-	{
-		uint32_t version;
-		uint16_t sub_build;
-	};
+    struct option_version
+    {
+        uint32_t version;
+        uint16_t sub_build;
+    };
 #pragma pack(pop)
 
-	option_version version;
-	unsigned char encryption;
+    option_version version;
+    unsigned char encryption;
 
-	uint32_t thread_id;
-	unsigned char mars;
-	unsigned char instopt;
+    uint32_t thread_id;
+    unsigned char mars;
+    unsigned char instopt;
 
-	std::vector<option> options;
-	buffer options_buffer;
+    std::vector<option> options;
+    buffer options_buffer;
 
-	bool encode(buffer& output);
-	bool encode_option(buffer& output, const option::token_type token, const void *data, const short size);
+    bool encode(buffer& output);
+    bool encode_option(buffer& output, const option::token_type token, const void *data, const short size);
 
-	bool decode(buffer& input);
+    bool decode(buffer& input);
 };
 
 struct frame_login7
 {
 #pragma pack(push, 1)
-	struct ref_type
-	{
-		uint16_t off;
-		uint16_t len;
-	};
+    struct ref_type
+    {
+        uint16_t off;
+        uint16_t len;
+    };
 
-	struct fixed_type
-	{
-		uint32_t length;
-		uint32_t tds_version; /* 0x71 for 7.1 */
-		uint32_t packet_size; // = 65536;
-		uint32_t client_prog_ver;
-		uint32_t client_pid;
-		uint32_t connection_id;
+    struct fixed_type
+    {
+        uint32_t length;
+        uint32_t tds_version; /* 0x71 for 7.1 */
+        uint32_t packet_size; // = 65536;
+        uint32_t client_prog_ver;
+        uint32_t client_pid;
+        uint32_t connection_id;
 
-		/* offset: 24, 0x18 */
+        /* offset: 24, 0x18 */
 
-		struct {
-			unsigned char f_byte_order:1;
-			unsigned char f_char:1;
-			unsigned char f_float:2;
-			unsigned char f_dump_load:1;
-			unsigned char f_use_db:1;
-			unsigned char f_database:1;
-			unsigned char f_set_lang:1;
-		} flags1;
+        struct {
+            unsigned char f_byte_order:1;
+            unsigned char f_char:1;
+            unsigned char f_float:2;
+            unsigned char f_dump_load:1;
+            unsigned char f_use_db:1;
+            unsigned char f_database:1;
+            unsigned char f_set_lang:1;
+        } flags1;
 
-		/* offset: 25, 0x19 */
+        /* offset: 25, 0x19 */
 
-		struct {
-			unsigned char f_language:1;
-			unsigned char f_odbc:1;
-			unsigned char f_reserved:2;
-			unsigned char f_user_type:3;
-			unsigned char f_int_security:1;
-		} flags2;
+        struct {
+            unsigned char f_language:1;
+            unsigned char f_odbc:1;
+            unsigned char f_reserved:2;
+            unsigned char f_user_type:3;
+            unsigned char f_int_security:1;
+        } flags2;
 
-		/* offset: 26, 0x1a */
+        /* offset: 26, 0x1a */
 
-		struct {
-			unsigned char f_sql_type:4;
-			unsigned char f_oledb:1;
-			unsigned char f_reserved:3;
-		} type_flags;
+        struct {
+            unsigned char f_sql_type:4;
+            unsigned char f_oledb:1;
+            unsigned char f_reserved:3;
+        } type_flags;
 
-		/* offset: 27, 0x1b */
+        /* offset: 27, 0x1b */
 
-		struct {
-			unsigned char f_change_password:1;
-			unsigned char f_user_instance:1;
-			unsigned char f_send_yukon_binaryxml:1;
-			unsigned char f_unknown_collation_handling:1;
-			unsigned char f_reserved:4;
-		} flags3;
+        struct {
+            unsigned char f_change_password:1;
+            unsigned char f_user_instance:1;
+            unsigned char f_send_yukon_binaryxml:1;
+            unsigned char f_unknown_collation_handling:1;
+            unsigned char f_reserved:4;
+        } flags3;
 
-		/* offset: 28, 0x1c */
+        /* offset: 28, 0x1c */
 
-		uint32_t client_time_zone;
+        uint32_t client_time_zone;
 
-		/* offset: 32, 0x20 */
+        /* offset: 32, 0x20 */
 
-		lcid_info client_lcid;
+        lcid_info client_lcid;
 
-		/* offset: 36, 0x24 */
+        /* offset: 36, 0x24 */
 
-		ref_type client_host
-		, user_name
+        ref_type client_host
+        , user_name
 
-		/* offset: 44, 0x2c */
+        /* offset: 44, 0x2c */
 
-		, user_pass
+        , user_pass
 
-		/* offset: 48, 0x30 */
+        /* offset: 48, 0x30 */
 
-		, app_name
-		, server_name
-		, unused
-		, interface_name
-		, language
-		, database
-		;
+        , app_name
+        , server_name
+        , unused
+        , interface_name
+        , language
+        , database
+        ;
 
-		unsigned char client_id[6];
+        unsigned char client_id[6];
 
-		ref_type sspi
-			, db_file
-			, change_password
-			;
-		uint32_t sspi_long;
-	} fixed;
+        ref_type sspi
+            , db_file
+            , change_password
+            ;
+        uint32_t sspi_long;
+    } fixed;
 #pragma pack(pop)
 
-	std::string client_host;
-	std::string user_name;
-	std::string user_pass;
-	std::string app_name;
-	std::string server_name;
-	std::string interface_name;
-	std::string language;
-	std::string database;
-	std::string sspi;
-	std::string db_file;
-	std::string change_password;
+    std::string client_host;
+    std::string user_name;
+    std::string user_pass;
+    std::string app_name;
+    std::string server_name;
+    std::string interface_name;
+    std::string language;
+    std::string database;
+    std::string sspi;
+    std::string db_file;
+    std::string change_password;
 
-	frame_login7();
+    frame_login7();
 
-	bool encode_ref(const std::string& data, ref_type& ref, buffer& ref_data, buffer::byte_filter f = 0);
-	bool encode(buffer& output);
-	bool decode_ref(buffer& input, ref_type& ref, std::string& value, buffer::byte_filter f = 0);
-	bool decode(buffer& input);
+    bool encode_ref(const std::string& data, ref_type& ref, buffer& ref_data, buffer::byte_filter f = 0);
+    bool encode(buffer& output);
+    bool decode_ref(buffer& input, ref_type& ref, std::string& value, buffer::byte_filter f = 0);
+    bool decode(buffer& input);
 };
 
 class query_header
 {
 public:
-	enum types {
-		query_notify = 0x0001,
-		transaction_descriptor = 0x0002
-	};
+    enum types {
+        query_notify = 0x0001,
+        transaction_descriptor = 0x0002
+    };
 
-	query_header(const types& header_type)
-	{
-		fixed.length = 0;
-		fixed.type = header_type;
-	}
+    query_header(const types& header_type)
+    {
+        fixed.length = 0;
+        fixed.type = header_type;
+    }
 
-	virtual ~query_header() { }
+    virtual ~query_header() { }
 
-	bool encode(buffer& output);
+    bool encode(buffer& output);
 
 protected:
-	virtual bool encode_data(buffer& output) = 0;
+    virtual bool encode_data(buffer& output) = 0;
 
 private:
 #pragma pack(push, 1)
-	struct {
-		uint32_t length;
-		uint16_t type;
-	} fixed;
+    struct {
+        uint32_t length;
+        uint16_t type;
+    } fixed;
 };
 
 /*
@@ -381,168 +381,168 @@ private:
 class query_header_trans : public query_header
 {
 public:
-	query_header_trans(const uint32_t outstanding_request_count, const uint64_t transaction_descriptor)
-		: query_header(query_header::transaction_descriptor)
-	{
-		fixed.outstanding_request_count = outstanding_request_count;
-		fixed.transaction_descriptor = transaction_descriptor;
-	}
+    query_header_trans(const uint32_t outstanding_request_count, const uint64_t transaction_descriptor)
+        : query_header(query_header::transaction_descriptor)
+    {
+        fixed.outstanding_request_count = outstanding_request_count;
+        fixed.transaction_descriptor = transaction_descriptor;
+    }
 
-	virtual ~query_header_trans() { }
+    virtual ~query_header_trans() { }
 
 protected:
-	bool encode_data(buffer& output);
+    bool encode_data(buffer& output);
 
 #pragma pack(push, 1)
-	struct {
-		uint64_t transaction_descriptor;
-		uint32_t outstanding_request_count;
-	} fixed;
+    struct {
+        uint64_t transaction_descriptor;
+        uint32_t outstanding_request_count;
+    } fixed;
 #pragma pack(pop)
 };
 
 struct query_headers
 {
-	query_headers();
-	~query_headers();
+    query_headers();
+    ~query_headers();
 
-	uint32_t total_len;
-	typedef std::vector<query_header *> value_type;
+    uint32_t total_len;
+    typedef std::vector<query_header *> value_type;
 
-	value_type headers;
+    value_type headers;
 
-	bool encode(buffer& output);
-	void clear();
+    bool encode(buffer& output);
+    void clear();
 };
 
 struct frame_sql_batch
 {
-	frame_sql_batch()
-		: auto_commit(true)
-	{ }
+    frame_sql_batch()
+        : auto_commit(true)
+    { }
 
-	bool auto_commit;
-	//all_headers
-	//sqltext // unicode stream
+    bool auto_commit;
+    //all_headers
+    //sqltext // unicode stream
 
-	std::string query;
+    std::string query;
 
-	bool encode(buffer& output);
+    bool encode(buffer& output);
 };
 
 enum frame_token_e
 {
-	ft_colmetadata = 0x81,
-	ft_error = 0xaa,
-	ft_loginack = 0xad,
-	ft_row = 0xd1,
-	ft_nbcrow = 0xd2,
-	ft_envchange = 0xe3,
-	ft_done = 0xfd
+    ft_colmetadata = 0x81,
+    ft_error = 0xaa,
+    ft_loginack = 0xad,
+    ft_row = 0xd1,
+    ft_nbcrow = 0xd2,
+    ft_envchange = 0xe3,
+    ft_done = 0xfd
 };
 
 enum frame_token_class_e
 {
-	tce_var_count = 0x00,
-	tce_zero_len = 0x01,
-	tce_var_len = 0x02,
-	tce_fixed_len = 0x03,
+    tce_var_count = 0x00,
+    tce_zero_len = 0x01,
+    tce_var_len = 0x02,
+    tce_fixed_len = 0x03,
 };
 
 inline int frame_token_get_class(unsigned char type)
 {
-	return (type & 0x30) >> 4;
+    return (type & 0x30) >> 4;
 }
 
 #pragma pack(push, 1)
 struct frame_token_header
 {
-	uint8_t type;
-	uint16_t length;
+    uint8_t type;
+    uint16_t length;
 };
 #pragma pack(pop)
 
 struct frame_token_error
 {
 #pragma pack(push, 1)
-	struct
-	{
-		uint32_t error_number;
-		uint8_t error_state;
-		uint8_t error_class;
-	} fixed;
+    struct
+    {
+        uint32_t error_number;
+        uint8_t error_state;
+        uint8_t error_class;
+    } fixed;
 #pragma pack(pop)
 
-	std::string error_text;
-	std::string server_name;
-	std::string proc_name;
-	uint32_t line;
+    std::string error_text;
+    std::string server_name;
+    std::string proc_name;
+    uint32_t line;
 
-	bool encode(buffer& output);
-	bool decode(buffer& input);
+    bool encode(buffer& output);
+    bool decode(buffer& input);
 };
 
 struct frame_token_loginack
 {
 #pragma pack(push, 1)
-	struct
-	{
-		uint8_t interface;
-		uint32_t tds_version;
-	} fixed1;
+    struct
+    {
+        uint8_t interface;
+        uint32_t tds_version;
+    } fixed1;
 #pragma pack(pop)
 
-	std::string prog_name;
+    std::string prog_name;
 
 #pragma pack(push, 1)
-	struct
-	{
-		uint8_t ver_major;
-		uint8_t ver_minor;
-		uint8_t build_num_hi;
-		uint8_t build_num_lo;
-	} fixed2;
+    struct
+    {
+        uint8_t ver_major;
+        uint8_t ver_minor;
+        uint8_t build_num_hi;
+        uint8_t build_num_lo;
+    } fixed2;
 #pragma pack(pop)
 
-	bool decode(buffer& input);
+    bool decode(buffer& input);
 };
 
 struct frame_token_envchange
 {
-	uint8_t type;
-	std::string s_old, s_new;
+    uint8_t type;
+    std::string s_old, s_new;
 
-	bool decode(const frame_token_header& hdr, buffer& input);
+    bool decode(const frame_token_header& hdr, buffer& input);
 };
 
 struct frame_token_done
 {
-	enum {
-		DONE_FINAL = 0x0000,  /**< This DONE is the final DONE in the request. */
-		DONE_MORE = 0x0001, /**< This DONE message is not the final DONE message in the response.
-				    Subsequent data streams to follow. */
-		DONE_ERROR = 0x0002, /**< An error occurred on the current SQL statement.
-				     A preceding ERROR token SHOULD be sent when this bit is set.*/
-		DONE_INXACT = 0x0004, /**< A transaction is in progress. */
-		DONE_COUNT = 0x0010, /**< The DoneRowCount value is valid.
-			      This is used to distinguish between a valid value of 0 for
-			      DoneRowCount or just an initialized variable. */
-		DONE_ATTN = 0x0020, /**< The DONE message is a server acknowledgement of
-				    a client ATTENTION message */
-		DONE_SRVERROR = 0x0100, /**< Used in place of DONE_ERROR when an error
-					  occurred on the current SQL statement, which is severe enough
-					  to require the result set, if any, to be discarded. */
-	} status_e;
+    enum {
+        DONE_FINAL = 0x0000,  /**< This DONE is the final DONE in the request. */
+        DONE_MORE = 0x0001, /**< This DONE message is not the final DONE message in the response.
+                    Subsequent data streams to follow. */
+        DONE_ERROR = 0x0002, /**< An error occurred on the current SQL statement.
+                     A preceding ERROR token SHOULD be sent when this bit is set.*/
+        DONE_INXACT = 0x0004, /**< A transaction is in progress. */
+        DONE_COUNT = 0x0010, /**< The DoneRowCount value is valid.
+                  This is used to distinguish between a valid value of 0 for
+                  DoneRowCount or just an initialized variable. */
+        DONE_ATTN = 0x0020, /**< The DONE message is a server acknowledgement of
+                    a client ATTENTION message */
+        DONE_SRVERROR = 0x0100, /**< Used in place of DONE_ERROR when an error
+                      occurred on the current SQL statement, which is severe enough
+                      to require the result set, if any, to be discarded. */
+    } status_e;
 
 #pragma pack(push, 1)
-	struct
-	{
-		unsigned short status;
-		unsigned short curcmd;
-		uint64_t rowcount;
-	} fixed;
+    struct
+    {
+        unsigned short status;
+        unsigned short curcmd;
+        uint64_t rowcount;
+    } fixed;
 #pragma pack(pop)
-	bool decode(buffer& input);
+    bool decode(buffer& input);
 };
 
 /* type info
@@ -594,102 +594,102 @@ TYPE_INFO = FIXEDLENTYPE
 
 enum data_type
 {
-	dt_null = 0x1f, ///< Null
-	dt_int1 = 0x30, ///< 1 byte
-	dt_bit = 0x32, ///< 1 byte
-	dt_int2 = 0x34, ///< 2 bytes
-	dt_int4 = 0x38, ///< 4 bytes
-	dt_datetim4 = 0x3a, ///< 4 bytes
-	dt_flt4 = 0x3b, ///< 4 bytes
-	dt_money = 0x3c, ///< 8 bytes
-	dt_datetime = 0x3d, ///< 8 bytes
-	dt_flt8 = 0x3e, ///< 8 bytes
-	dt_money4 = 0x7a, ///< 4 bytes
-	dt_int8 = 0x7f, ///< 8 bytes
-	dt_intn = 0x26, ///< 1, 2, 4 or 8 bytes
-	dt_bigvarchar = 0xa7,
-	dt_nvarchar = 0xe7,
-	dt_bigbinary = 0xad,
+    dt_null = 0x1f, ///< Null
+    dt_int1 = 0x30, ///< 1 byte
+    dt_bit = 0x32, ///< 1 byte
+    dt_int2 = 0x34, ///< 2 bytes
+    dt_int4 = 0x38, ///< 4 bytes
+    dt_datetim4 = 0x3a, ///< 4 bytes
+    dt_flt4 = 0x3b, ///< 4 bytes
+    dt_money = 0x3c, ///< 8 bytes
+    dt_datetime = 0x3d, ///< 8 bytes
+    dt_flt8 = 0x3e, ///< 8 bytes
+    dt_money4 = 0x7a, ///< 4 bytes
+    dt_int8 = 0x7f, ///< 8 bytes
+    dt_intn = 0x26, ///< 1, 2, 4 or 8 bytes
+    dt_bigvarchar = 0xa7,
+    dt_nvarchar = 0xe7,
+    dt_bigbinary = 0xad,
 };
 
 struct column_info
 {
-	enum type {
-		ct_udt = 0x0000,
-	};
+    enum type {
+        ct_udt = 0x0000,
+    };
 #pragma pack(push, 1)
-	struct {
-		uint32_t user_type;
-		struct {
-			unsigned f_null:1;
-			unsigned f_casesen:1;
-			unsigned us_updateable:2;
-			unsigned f_identity:1;
-			unsigned f_computed:1;
-			unsigned us_reserved_odbc:2;
-			unsigned f_fixedlen_clr_type:1;
-			unsigned f_reserved_bit:1;
-			unsigned f_sparsecolumnset:1;
-			unsigned us_reserved2:2;
-			unsigned f_hidden:1;
-			unsigned f_key:1;
-			unsigned f_nullable_unknown:1;
-		} flags;
-	} fixed1;
+    struct {
+        uint32_t user_type;
+        struct {
+            unsigned f_null:1;
+            unsigned f_casesen:1;
+            unsigned us_updateable:2;
+            unsigned f_identity:1;
+            unsigned f_computed:1;
+            unsigned us_reserved_odbc:2;
+            unsigned f_fixedlen_clr_type:1;
+            unsigned f_reserved_bit:1;
+            unsigned f_sparsecolumnset:1;
+            unsigned us_reserved2:2;
+            unsigned f_hidden:1;
+            unsigned f_key:1;
+            unsigned f_nullable_unknown:1;
+        } flags;
+    } fixed1;
 #pragma pack(pop)
 
-	uint8_t type;
+    uint8_t type;
 
-	uint32_t length;
+    uint32_t length;
 
-	//TYPE_INFO;
+    //TYPE_INFO;
 #pragma pack(push, 1)
-	struct {
-		lcid_info lcid;
-		uint8_t sort_id;
-	} collation;
+    struct {
+        lcid_info lcid;
+        uint8_t sort_id;
+    } collation;
 #pragma pack(pop)
 
-	std::vector<std::string> table_name;
-	std::string col_name;
-	bool decode(buffer& input);
+    std::vector<std::string> table_name;
+    std::string col_name;
+    bool decode(buffer& input);
 };
 
 struct frame_token_colmetadata
 {
-	typedef std::deque<column_info> info_type;
-	info_type info;
+    typedef std::deque<column_info> info_type;
+    info_type info;
 
-	bool decode(buffer& input);
-	void clear();
+    bool decode(buffer& input);
+    void clear();
 };
 
 struct column_data
 {
-	column_data();
+    column_data();
 
-	bool isNull;
+    bool isNull;
 
-	bool decode(const column_info& info, buffer& input);
+    bool decode(const column_info& info, buffer& input);
 
-	union
-	{
-		int64_t v_bigint;
-		double v_real;
-	} data;
+    union
+    {
+        int64_t v_bigint;
+        double v_real;
+    } data;
 
-	std::string raw;
+    std::string raw;
 };
 
 //typedef std::tr1::shared_ptr<shared_ptr> column_data_ptr;
 
 struct frame_trans_request
 {
-	/*
-	all_headers;
-	request_type;
-	request_payload
-	*/
+    /*
+    all_headers;
+    request_type;
+    request_payload
+    */
 };
 
 } // namespace tds
